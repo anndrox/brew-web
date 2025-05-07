@@ -16,23 +16,23 @@ Originally created for personal use, Brew-Web is now shared for others in the ho
 🔧 Installation Instructions (Ubuntu or similar)
   1. Download and unzip the latest release
 
-bash: cd ~
+<pre>bash: cd ~
 bash: curl -L -o brew-web-v1.2.0.zip https://github.com/anndrox/brew-web/raw/main/brew-web-v1.2.0.zip
 bash: unzip brew-web-v1.2.0.zip
-bash: cd brew-web
+bash: cd brew-web </pre>
 
   3. Start the container
 
-bash: docker compose up -d --build
+<pre>bash: docker compose up -d --build </pre>
 
 Visit http://your-server-ip:4452 to access the app.
 
 🔐 Password Reset
 If you've forgotten your password:
 
-bash: rm instance/force_reset.flag
+<pre>bash: rm instance/force_reset.flag
 bash: docker compose stop
-bash: docker compose up -d --build
+bash: docker compose up -d --build  </pre>
 
 Now, visiting the site will prompt you to create a new admin account.
 
@@ -45,15 +45,15 @@ Go to Settings → Change Password
 🔄 Updating the Database (for existing installs)
 If you are upgrading from a previous version and need to apply database schema changes:
 
-bash: docker exec -it brew-web /bin/sh
+<pre>bash: docker exec -it brew-web /bin/sh
 bash: export FLASK_APP=app
 bash: export FLASK_ENV=development
 bash: flask db migrate -m "Upgrade version"
 bash: flask db upgrade
-bash: exit
+bash: exit</pre>
 (or CTRL+D and then exit)
-bash: docker compose down
-bash: docker compose up -d --build
+<pre>bash:: docker compose down
+bash:: docker compose up -d --build</pre>
 
 👥 User Roles & Permissions
 Brew-Web supports role-based access control to manage what users can see and do:
