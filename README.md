@@ -1,23 +1,67 @@
-# brew-web
-Docker compose for self-hosted brewing. Includes recipes, logs, information, and tools.
+Brew-Web v1.2.0 – Self-Hosted Brewing Dashboard
+Brew-Web is a self-hosted utility for managing mead, wine, and beer batches. It includes:
 
-Starting off as a self-made project, I want to share so others can use the same utilities I am creating for myself.
+- Recipe creation and scaling
 
-= Password Reset =
-If you have forgotten your password, delete the file /instance/force_reset.flag and restart your container "docker compose stop" then "docker compose up -d --build" Once you visit your site again, it will prompt you for a password change. If you need to change your password, you can go to your user settings (top right) select "Settings" and the Change Password in the side-bar.
+- Batch tracking and gravity logging
 
-= Updating database with current version =
-Updates will happen when I add more variables to the database. If you are downloading fresh, you will not need to worry about this. If you have a later version and wish to update or pull the current version, follow these commands. (results may vary if you are using somthing else other than Ubuntu Server)
-  1. run docker exec -it brew-web /bin/sh
-  2. export FLASK_APP=app
-  3. export FLASK_ENV=development
-  4. flask db migrate -m "Upgrade version"
-  5. flask db upgrade
-  6. exit
-  7. once in the directory, run docker compose down
-  8. then docker compose up -d --build
+- Yeast database reference
 
-= INSTALL = 
-unzip the directory in your ~/ and extract. 
-cd ~/brew-web
-docker compose up -d --build
+- Brewing calculators (ABV, dilution, TOSNA, etc.)
+
+- Role-based user access and admin controls
+
+Originally created for personal use, Brew-Web is now shared for others in the homebrewing community.
+
+🔧 Installation Instructions (Ubuntu or similar)
+  1. Download and unzip the latest release
+
+<code> cd ~
+<code> curl -L -o brew-web-v1.2.0.zip https://github.com/anndrox/brew-web/raw/main/brew-web-v1.2.0.zip
+<code> unzip brew-web-v1.2.0.zip
+<code> cd brew-web
+  3. Start the container
+
+<code> docker compose up -d --build
+
+Visit http://<your-server-ip>:4452 to access the app.
+
+🔐 Password Reset
+If you've forgotten your password:
+
+<code> rm instance/force_reset.flag
+<code> docker compose stop
+<code> docker compose up -d --build
+
+Now, visiting the site will prompt you to create a new admin account.
+
+To change your password manually:
+
+Click your profile icon (top right)
+
+Go to Settings → Change Password
+
+🔄 Updating the Database (for existing installs)
+If you are upgrading from a previous version and need to apply database schema changes:
+
+While the container is running:
+<code> docker exec -it brew-web /bin/sh
+<code> export FLASK_APP=app
+<code> export FLASK_ENV=development
+<code> flask db migrate -m "Upgrade version"
+<code> flask db upgrade
+<code> exit
+<code> docker compose down
+<code> docker compose up -d --build
+
+
+📁 File Structure Summary
+/app/ – Flask source code
+
+/instance/ – Configuration and password reset flag
+
+/static/ – Images, styles, favicon
+
+/templates/ – HTML templates
+
+docker-compose.yml – Defines how Brew-Web runs
