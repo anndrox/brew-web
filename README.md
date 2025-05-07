@@ -14,38 +14,26 @@ Role-based user access and admin controls
 Originally created for personal use, Brew-Web is now shared for others in the homebrewing community.
 
 🔧 Installation Instructions (Ubuntu or similar)
-1. Install Docker and Docker Compose
-If not already installed:
+  1. Download and unzip the latest release
 
-bash
-Copy
-Edit
-sudo apt update
-sudo apt install -y docker.io docker-compose unzip curl
-2. Download and unzip the latest release
-bash
-Copy
-Edit
-cd ~
-curl -L -o brew-web-v1.2.0.zip https://github.com/anndrox/brew-web/raw/main/brew-web-v1.2.0.zip
-unzip brew-web-v1.2.0.zip
-cd brew-web
-3. Start the container
-bash
-Copy
-Edit
-docker compose up -d --build
+bash: cd ~
+bash: curl -L -o brew-web-v1.2.0.zip https://github.com/anndrox/brew-web/raw/main/brew-web-v1.2.0.zip
+bash: unzip brew-web-v1.2.0.zip
+bash: cd brew-web
+
+  3. Start the container
+
+bash: docker compose up -d --build
+
 Visit http://<your-server-ip>:4452 to access the app.
 
 🔐 Password Reset
 If you've forgotten your password:
 
-bash
-Copy
-Edit
-rm instance/force_reset.flag
-docker compose stop
-docker compose up -d --build
+bash: rm instance/force_reset.flag
+bash: docker compose stop
+bash: docker compose up -d --build
+
 Now, visiting the site will prompt you to create a new admin account.
 
 To change your password manually:
@@ -57,17 +45,28 @@ Go to Settings → Change Password
 🔄 Updating the Database (for existing installs)
 If you are upgrading from a previous version and need to apply database schema changes:
 
-bash
-Copy
-Edit
-docker exec -it brew-web /bin/sh
-export FLASK_APP=app
-export FLASK_ENV=development
-flask db migrate -m "Upgrade version"
-flask db upgrade
-exit
-docker compose down
-docker compose up -d --build
+bash: docker exec -it brew-web /bin/sh
+bash: export FLASK_APP=app
+bash: export FLASK_ENV=development
+bash: flask db migrate -m "Upgrade version"
+bash: flask db upgrade
+bash: exit
+(or CTRL+D and then exit)
+bash: docker compose down
+bash: docker compose up -d --build
+
+👥 User Roles & Permissions
+Brew-Web supports role-based access control to manage what users can see and do:
+
+Role	Description	Permissions
+admin    --   Full access to the system	Create/edit/delete users, recipes, batches; access admin dashboard
+editor   --   Power user for day-to-day brewing	Create/edit batches and recipes, view all data
+user	   --   Read-only access	View recipes, batches, calculators; no editing
+
+The first user created during /setup is automatically made an admin.
+
+Admins can create, delete, or reset passwords for any user from the Administration page under Settings.
+
 📁 File Structure Summary
 /app/ – Flask source code
 
