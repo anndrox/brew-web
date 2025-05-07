@@ -25,7 +25,7 @@ bash: cd brew-web
 
 bash: docker compose up -d --build
 
-Visit http://<your-server-ip>:4452 to access the app.
+Visit http://your-server-ip:4452 to access the app.
 
 🔐 Password Reset
 If you've forgotten your password:
