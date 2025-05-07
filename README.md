@@ -16,3 +16,8 @@ Updates will happen when I add more variables to the database. If you are downlo
   6. exit
   7. once in the directory, run docker compose down
   8. then docker compose up -d --build
+
+= INSTALL = 
+unzip the directory in your ~/ and extract. 
+cd ~/brew-web
+docker compose up -d --build
