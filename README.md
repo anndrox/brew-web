@@ -1,79 +1,144 @@
-Brew-Web v1.2.0 – Self-Hosted Brewing Dashboard
-Brew-Web is a self-hosted utility for managing mead, wine, and beer batches. It includes:
+# Brew-Web 🍯
 
-Recipe creation and scaling
+[![Version](https://img.shields.io/badge/version-v1.3.0-blue)](#)
+[![Docker](https://img.shields.io/badge/built%20with-Docker-blue)](#)
+[![Flask](https://img.shields.io/badge/framework-Flask-yellow)](#)
+[![License](https://img.shields.io/badge/license-MIT-green)](#)
+[![Status](https://img.shields.io/badge/status-stable-brightgreen)](#)
 
-Batch tracking and gravity logging
+A self-hosted web app to manage mead brewing recipes, batches, and calculators — complete with stats, backups, and admin tools.
 
-Yeast database reference
+---
 
-Brewing calculators (ABV, dilution, TOSNA, etc.)
+## 🚀 Quick Start
 
-Role-based user access and admin controls
+[![Docker Compose](https://img.shields.io/badge/Setup-Docker%20Compose-informational)](#)
 
-Originally created for personal use, Brew-Web is now shared for others in the homebrewing community.
+### Requirements
 
-🔧 Installation Instructions (Ubuntu or similar)
-  1. Download and unzip the latest release
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/)
 
-<pre>bash: cd ~
-bash: curl -L -o brew-web-v1.2.0.zip https://github.com/anndrox/brew-web/raw/main/brew-web-v1.2.0.zip
-bash: unzip brew-web-v1.2.0.zip
-bash: cd brew-web </pre>
+### Installation
 
-  3. Start the container
+```bash
+git clone https://github.com/yourusername/brew-web.git
+cd brew-web
+cp .env.example .env   # Customize credentials and secrets
+docker compose up -d
+```
 
-<pre>bash: docker compose up -d --build </pre>
+Access the app at: [http://localhost:4452](http://localhost:4452)
 
-Visit http://your-server-ip:4452 to access the app.
+---
 
-🔐 Password Reset
-If you've forgotten your password:
+## 🔐 Authentication & Security
 
-<pre>bash: rm instance/force_reset.flag
-bash: docker compose stop
-bash: docker compose up -d --build  </pre>
+[![Flask Login](https://img.shields.io/badge/Security-Login%20Required-red)](#)
 
-Now, visiting the site will prompt you to create a new admin account.
+- Setup is required via `/setup` on first run
+- Admin controls and user management via `/settings/admin`
+- Force password reset by placing a file:
+  ```
+  /instance/force_reset.flag
+  ```
+- For public deployments, use a reverse proxy with SSL (e.g. NGINX + Let's Encrypt)
 
-To change your password manually:
+---
 
-Click your profile icon (top right)
+## 📋 Features
 
-Go to Settings → Change Password
+[![Feature Rich](https://img.shields.io/badge/Brew%20Tracking-Recipes%2C%20Batches%2C%20ABV-lightgrey)](#)
 
-🔄 Updating the Database (for existing installs)
-If you are upgrading from a previous version and need to apply database schema changes:
+- ✅ Recipe scaling with structured ingredients
+- ✅ Batch logging with gravities, honey, and notes
+- ✅ Built-in brewing calculators:
+  - ABV, TOSNA, dilution, sweetness, carbonation, temp correction, volume recovery
+- ✅ Yeast reference guide with visuals and ratings
+- ✅ Batch calendar tracker
+- ✅ Role-based admin management
+- ✅ Full PostgreSQL backup & restore
+- ✅ Settings: theme, font, security
 
-<pre>bash: docker exec -it brew-web /bin/sh
-bash: export FLASK_APP=app
-bash: export FLASK_ENV=development
-bash: flask db migrate -m "Upgrade version"
-bash: flask db upgrade
-bash: exit</pre>
-(or CTRL+D and then exit)
-<pre>bash:: docker compose down
-bash:: docker compose up -d --build</pre>
+---
 
-👥 User Roles & Permissions
-Brew-Web supports role-based access control to manage what users can see and do:
+## 💾 Backup & Restore
 
-Role	Description	Permissions
-admin    --   Full access to the system	Create/edit/delete users, recipes, batches; access admin dashboard
-editor   --   Power user for day-to-day brewing	Create/edit batches and recipes, view all data
-user	   --   Read-only access	View recipes, batches, calculators; no editing
+[![Database](https://img.shields.io/badge/PostgreSQL-Export%2FImport-success)](#)
 
-The first user created during /setup is automatically made an admin.
+- **Export:**  
+  Visit `/export-db` (admin only) — saves to `/backups`
 
-Admins can create, delete, or reset passwords for any user from the Administration page under Settings.
+- **Import:**  
+  Upload `.sql` via `/admin`  
+  ⏳ Import runs in the background with countdown and refresh
 
-📁 File Structure Summary
-/app/ – Flask source code
+- Safe for `docker compose down -v && up --build` cycles
 
-/instance/ – Configuration and password reset flag
+---
 
-/static/ – Images, styles, favicon
+## ⚙️ Configuration
 
-/templates/ – HTML templates
+[![Configurable](https://img.shields.io/badge/Customizable-.env%20%7C%20config.py-yellow)](#)
 
-docker-compose.yml – Defines how Brew-Web runs
+Key environment variables:
+
+```env
+FLASK_ENV=production
+SECRET_KEY=your-secret-key
+DATABASE_URL=postgresql://brewuser:brewpass@db:5432/brewweb
+```
+
+---
+
+## 🗂 Project Structure
+
+[![Structure](https://img.shields.io/badge/Folder%20Layout-Described-lightgrey)](#)
+
+```
+brew-web/
+├── app/                  # Flask app
+│   ├── templates/        # Jinja2 templates
+│   ├── static/           # CSS & JS
+│   ├── routes/           # Feature blueprints
+│   └── models.py         # SQLAlchemy models
+├── backups/              # SQL dumps
+├── config.py             # App config
+├── docker-compose.yml
+├── Dockerfile
+└── README.md
+```
+
+---
+
+## 🧪 Dev Tips
+
+[![For Developers](https://img.shields.io/badge/Usage-Dev%20Friendly-orange)](#)
+
+- Reset environment:  
+  ```bash
+  docker compose down -v && docker compose up --build
+  ```
+
+- Customize UI:  
+  Modify `base.html`, `admin.html`, or `static/style.css`
+
+- Logs saved to:  
+  `/logs/brewweb.log`
+
+---
+
+## 📌 Notes
+
+- Your `pg_dump`/`psql` commands must use the same credentials as `docker-compose.yml`
+- Tables are automatically dropped and reloaded on import via `subprocess.Popen()`
+- Alembic is automatically skipped after full restores
+- Countdown refresh prevents white screen crash during restore
+
+---
+
+## 📜 License
+
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+
+MIT © 2025 Scott Jones
