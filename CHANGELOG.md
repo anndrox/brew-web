@@ -1,5 +1,51 @@
 # Brew-Web Changelog
 
+## [v1.3.0] - 2025-05-09
+
+### Added
+- Full brewing calculator system:
+  - ABV calculator
+  - Sweetness targeting calculator
+  - Dilution calculator
+  - Honey required calculator
+  - Carbonation calculator
+  - TOSNA nutrient schedule calculator
+  - Temperature correction calculator
+  - Volume recovery calculator
+- New `/stats` page with batch statistics
+- Edit and delete functionality for recipes
+- Edit batch functionality with gravity readings and honey used
+- Ingredient scaling by batch size in recipe details
+- Structured ingredient model and form updates
+- Yeast reference page with icons and filtering
+- Calendar page for alcohol-related batch events
+- Settings sidebar with "Customize" and "Change Password"
+- Admin-only `/setup` redirect handling
+- Role-based access control (RBAC) system
+- Administration page for user management
+- Backup/export and import support for PostgreSQL database
+- URL storage fields for to support sharing (work in progress)
+- Docker Compose support with port 4452 routing and SSL proxy guidance
+- `/instance/force_reset.flag` trigger for password reset/admin flow
+- `settings/` template folder for modular settings UI
+
+### Changed
+- Converted unstructured recipe ingredients to structured format for scaling
+- Adjusted CSS for dark/light mode readability across all views
+- Reworked all calculator templates and forms for consistent UI
+- Streamlined batch creation to allow optional initial gravity
+- Improved layout consistency for `base.html` and all feature tabs
+- Switched static routes to blueprint-aware routing
+- Added flash message support to more forms
+- Enforced user login and role checks on critical admin views
+
+### Fixed
+- Sidebar and navigation inconsistencies in dark/light mode
+- Duplicate batch creation messages and display issues
+- Visual bugs in yeast listing and batch views
+- Missing calculator templates after regeneration
+- Issues with batch creation when no recipes were available
+
 ## [1.2.0] - 2025-05-07
 
 ### Added
