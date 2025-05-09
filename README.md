@@ -22,7 +22,7 @@ A self-hosted web app to manage mead brewing recipes, batches, and calculators â
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/brew-web.git
+git clone https://github.com/anndrox/brew-web.git
 cd brew-web
 cp .env.example .env   # Customize credentials and secrets
 docker compose up -d
