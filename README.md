@@ -82,14 +82,13 @@ Access the app at: [http://localhost:4452](http://localhost:4452)
 
 ## ⚙️ Configuration
 
-[![Configurable](https://img.shields.io/badge/Customizable-.env%20%7C%20config.py-yellow)](#)
+[![Configurable](https://img.shields.io/badge/Customizable-.env%20%7C%20docker-compose.yml-yellow)](#)
 
 Key environment variables:
 
 ```env
-FLASK_ENV=production
-SECRET_KEY=your-secret-key
-DATABASE_URL=postgresql://brewuser:brewpass@db:5432/brewweb
+environment:
+  SECRET_KEY: changeme-in-production  # <-- CHANGE THIS 
 ```
 
 ---
