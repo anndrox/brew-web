@@ -28,7 +28,7 @@ unzip brew-web-1.3.0.zip -d .
 
 cd brew-web
 
-docker compose up -d
+docker compose up -d --build
 ```
 
 Access the app at: [http://localhost:4452](http://localhost:4452)
