@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <title>Brew Log</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='calculators.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block head %}{% endblock %}
+</head>
+
+<body class="{% if current_user.is_authenticated and current_user.theme == 'light' %}light-mode{% else %}dark-mode{% endif %}">
+    <div class="page-container">
+        <nav class="sidebar">
+            <div>
+                <a href="{{ url_for('routes.index') }}">
+                    <img src="{{ url_for('static', filename='images/bw-logo.png') }}" alt="Brew Web Logo" style="max-width: 100%; margin-bottom: 20px;">
+                </a>
+                <ul>
+                    <li><a href="{{ url_for('routes.index') }}">🏠 Home/Recipes</a></li>
+                    {% if current_user.is_authenticated and (current_user.role == 'admin' or current_user.role == 'editor') %}
+                        <li><a href="{{ url_for('routes.recipes_bp.new_recipe') }}">➕ Add Recipe</a></li>
+                        <li><a href="{{ url_for('routes.batches_bp.new_batch') }}">➕ Add Batch</a></li>
+                    {% endif %}
+                    <li><a href="{{ url_for('routes.batches_bp.list_batches') }}">📋 View Batches</a></li>
+                    <li><a href="{{ url_for('routes.calendar_bp.calendar') }}">📅 Calendar</a></li>
+                    <li><a href="{{ url_for('routes.stats_bp.view_stats') }}">📊 View Stats</a></li>
+                    <li><a href="{{ url_for('routes.yeasts') }}">🧫 Yeast Guide</a></li>
+                    <li><a href="{{ url_for('routes.calculator_bp.calculator_index') }}">🧮 Calculators</a></li>
+                    <li><a href="javascript:void(0);" onclick="toggleDropdown('settings-menu')">⚙️ Settings ▾</a>
+						<ul id="settings-menu" style="display: {{ 'block' if request.args.get('open') == 'settings' else 'none' }}; list-style: none; margin-left: 15px; padding-left: 0;">
+						{% if current_user.is_authenticated and current_user.role == 'admin' %}
+						  <li><a href="{{ url_for('routes.admin_bp.admin_settings', open='settings') }}">Administration</a></li>
+						{% endif %}
+						<li><a href="{{ url_for('routes.settings_bp.settings_customize', open='settings') }}">Customize</a></li>
+						<li><a href="{{ url_for('routes.settings_bp.settings_password', open='settings') }}">Change Password</a></li>
+						<li><a href="{{ url_for('auth_bp.logout') }}">🚪 Logout</a></li>
+					  </ul>
+					</li>
+<div style="margin-top: 10px;"></div>
+
+                </ul>
+            </div>
+            <div class="footer">
+                v{{ app_version }} – Brew Web
+            </div>
+        </nav>
+
+        <main class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+	<script>
+  function toggleDropdown(id) {
+    const el = document.getElementById(id);
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+	</script>
+</body>
+</html>

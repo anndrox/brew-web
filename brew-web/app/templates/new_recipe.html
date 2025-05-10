@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div style="
+        background-color: {% if category == 'warning' %}#fff3cd{% elif category == 'success' %}#d4edda{% else %}#cce5ff{% endif %};
+        color: #333;
+        border-left: 6px solid {% if category == 'warning' %}#ffa502{% elif category == 'success' %}#28a745{% else %}#007bff{% endif %};
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+        font-weight: bold;
+      ">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<h1>New Recipe</h1>
+
+<form method="POST">
+  <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+
+  <label for="name">Recipe Name:</label><br/>
+  <input id="name" name="name" required/><br/><br/>
+
+  <label for="batch_size">Default Batch Size (gallons):</label><br/>
+  <input min="1" name="batch_size" required type="number" value="1"/><br/><br/>
+
+  <label for="alcohol_type">Alcohol Type:</label><br/>
+  <select id="alcohol_type" name="alcohol_type" required>
+    <option value="">-- Select --</option>
+    <option value="Mead">Mead</option>
+    <option value="Wine">Wine</option>
+    <option value="Beer">Beer</option>
+  </select><br/><br/>
+
+  <h3>Ingredients (per gallon)</h3>
+  <div id="ingredient-container">
+    <div class="ingredient-row">
+      <input name="ingredient_name_0" placeholder="Name" type="text" required/>
+      <input name="ingredient_amount_0" placeholder="Amount" step="0.01" type="number" required/>
+      <input name="ingredient_unit_0" placeholder="Unit" type="text" required/>
+      <input name="ingredient_note_0" placeholder="Note (optional)" type="text"/>
+    </div>
+  </div>
+  <button onclick="addIngredient()" type="button">➕ Add Ingredient</button><br/><br/>
+
+  <label for="water_type">Suggested Water Type:</label>
+  <select id="water_type" name="water_type">
+    <option value="">-- Select --</option>
+    <option value="Filtered Tap">Filtered Tap</option>
+    <option value="Spring Water">Spring Water</option>
+    <option value="Distilled">Distilled</option>
+    <option value="Well Water">Well Water</option>
+    <option value="Unfiltered Tap">Unfiltered Tap</option>
+  </select><br/><br/>
+
+  <label for="content">Instructions:</label><br/>
+  <textarea cols="50" id="content" name="content" rows="6"></textarea><br/><br/>
+
+  <button type="submit">Create Recipe</button>
+</form>
+
+<a href="{{ url_for('routes.recipes_bp.index') }}">Cancel</a>
+
+<script>
+  let ingredientIndex = 1;
+  function addIngredient() {
+    const container = document.getElementById('ingredient-container');
+    const div = document.createElement('div');
+    div.className = 'ingredient-row';
+    div.style.marginBottom = '10px';
+    div.innerHTML = `
+      <input type="text" name="ingredient_name_${ingredientIndex}" placeholder="Name" required>
+      <input type="number" step="0.01" name="ingredient_amount_${ingredientIndex}" placeholder="Amount" required>
+      <input type="text" name="ingredient_unit_${ingredientIndex}" placeholder="Unit" required>
+      <input type="text" name="ingredient_note_${ingredientIndex}" placeholder="Note (optional)">
+      <button type="button" onclick="confirmRemove(this)">❌</button>
+    `;
+    container.appendChild(div);
+    ingredientIndex++;
+  }
+
+  function confirmRemove(button) {
+    if (confirm("Remove this ingredient?")) {
+      button.parentElement.remove();
+    }
+  }
+</script>
+{% endblock %}

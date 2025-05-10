@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>📊 Mead Batch Statistics</h1>
+
+<h2>ABV % by Batch</h2>
+<canvas id="abvChart" style="max-height: 300px;"></canvas>
+
+<h2 style="margin-top: 2em;">Batches Over Time</h2>
+<canvas id="batchCountChart" style="max-height: 300px;"></canvas>
+
+<script>
+  const abvCtx = document.getElementById('abvChart').getContext('2d');
+  const abvChart = new Chart(abvCtx, {
+    type: 'bar',
+    data: {
+      labels: {{ batch_names | tojson }},
+      datasets: [{
+        label: 'ABV %',
+        data: {{ abv_values | tojson }},
+        backgroundColor: 'rgba(255, 159, 64, 0.7)',
+        borderColor: 'rgba(255, 159, 64, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.raw + '%' } }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'ABV (%)' }
+        }
+      }
+    }
+  });
+
+  const countCtx = document.getElementById('batchCountChart').getContext('2d');
+  const batchChart = new Chart(countCtx, {
+    type: 'line',
+    data: {
+      labels: {{ dates | tojson }},
+      datasets: [{
+        label: 'Batches Started',
+        data: {{ counts | tojson }},
+        fill: false,
+        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: 'rgba(54, 162, 235, 0.3)',
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Batch Count' }
+        },
+        x: {
+          title: { display: true, text: 'Date' }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

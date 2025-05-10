@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ recipe.name }}</h1>
+<p><strong>Created:</strong> {{ recipe.created_date.strftime('%Y-%m-%d') }}</p>
+<p><strong>Alcohol Type:</strong> {{ recipe.alcohol_type or "N/A" }}</p>
+<h3>Instructions</h3>
+<pre style="white-space: pre-wrap;">{{ recipe.instructions }}</pre>
+<h3>Notes</h3>
+<pre style="white-space: pre-wrap;">{{ recipe.notes }}</pre>
+<a href="{{ url_for('routes.recipes_bp.edit_recipe', recipe_id=recipe.id) }}">Edit Recipe</a>
+<a href="{{ url_for('routes.recipes_bp.index') }}">Back</a>
+{% endblock %}

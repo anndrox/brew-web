@@ -1,0 +1,32 @@
+{% set active = request.endpoint %}
+<div style="width: 200px; background: #333; padding: 20px; border-radius: 5px; margin-right: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 100%;">
+  <div>
+    <h4 style="color: #eee;">Settings</h4>
+    <ul style="list-style: none; padding: 0; margin: 0;">
+      {% if current_user.role == 'admin' %}
+      <li style="margin-bottom: 10px;">
+        <a href="{{ url_for('routes.admin_settings') }}" {% if 'admin_settings' in active %}style="font-weight: bold;"{% endif %}>🛠️ Administration</a>
+      </li>
+      {% endif %}
+      <li style="margin-bottom: 10px;">
+        <a href="{{ url_for('routes.settings_customize') }}" {% if 'settings_customize' in active %}style="font-weight: bold;"{% endif %}>🎨 Customize</a>
+      </li>
+      <li>
+        <a href="{{ url_for('routes.settings_password') }}" {% if 'settings_password' in active %}style="font-weight: bold;"{% endif %}>🔑 Change Password</a>
+      </li>
+    </ul>
+  </div>
+  <div style="margin-top: 40px; font-size: 0.8em; color: #ccc;">
+    v{{ app_version }} – Brew Web
+  </div>
+  {% if update_info.update_available %}
+    <div style="color: orange;">
+      🔔 New version available: <strong>{{ update_info.latest }}</strong><br>
+      You are running: {{ update_info.current }}
+    </div>
+  {% else %}
+    <div style="color: green;">
+      ✅ You are running the latest version ({{ update_info.current }})
+    </div>
+  {% endif %}
+</div>

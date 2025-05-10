@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="flex: 1;">
+  <h2>Customize Appearance</h2>
+  <form method="POST">
+    <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+
+    <div class="mb-3">
+      <label class="form-label" for="theme">Theme</label>
+      <select class="form-control" name="theme">
+        <option value="dark" {% if current_user.theme == "dark" %}selected{% endif %}>Dark</option>
+        <option value="light" {% if current_user.theme == "light" %}selected{% endif %}>Light</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="font_size">Font Size</label>
+      <select class="form-control" name="font_size">
+        <option value="14px" {% if current_user.font_size == "14px" %}selected{% endif %}>Small</option>
+        <option value="16px" {% if current_user.font_size == "16px" %}selected{% endif %}>Medium</option>
+        <option value="18px" {% if current_user.font_size == "18px" %}selected{% endif %}>Large</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Save Preferences</button>
+  </form>
+</div>
+{% endblock %}

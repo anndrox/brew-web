@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Calendar{% endblock %}
+
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<h2>📅 Batch Calendar & Events</h2>
+<div id="calendar"></div>
+
+<!-- Modal -->
+<div id="eventModal" style="display: none; position: fixed; top: 15%; left: 50%; transform: translateX(-50%); background: #222; color: #eee; padding: 20px; border-radius: 8px; z-index: 10; box-shadow: 0 0 20px #000;">
+  <h3 id="modalTitle">Add/Edit Event</h3>
+  <form id="eventForm">
+    <input type="hidden" name="event_id" id="event_id">
+    <label>Title:<br>
+      <input type="text" name="title" id="event_title" required>
+    </label><br><br>
+    <label>Start Date:<br>
+      <input type="date" name="start" id="event_start" required>
+    </label><br><br>
+    <label>End Date:<br>
+      <input type="date" name="end" id="event_end">
+    </label><br><br>
+    <label>Description:<br>
+      <textarea name="description" id="event_description" rows="3"></textarea>
+    </label><br><br>
+    <button type="submit">Save</button>
+    <button type="button" id="cancelBtn">Cancel</button>
+    <button type="button" id="deleteBtn" style="background: darkred;">Delete</button>
+    <a id="gcalLink" href="#" target="_blank" style="display:none; margin-left: 10px;">📅 Add to Google Calendar</a>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const calendarEl = document.getElementById('calendar');
+
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    events: '{{ url_for("routes.calendar_bp.calendar_events") }}',
+    selectable: true,
+    height: 'auto',
+    dateClick: function(info) {
+      openModal({ start: info.dateStr });
+    },
+    eventClick: function(info) {
+      const props = info.event.extendedProps;
+      if (props.custom || props.type === "batch") {
+        openModal({
+          id: props.custom ? info.event.id : '',
+          title: info.event.title,
+          start: info.event.startStr,
+          end: info.event.endStr,
+          description: props.description
+        });
+      }
+    }
+  });
+
+  calendar.render();
+
+  function openModal(event = {}) {
+    document.getElementById('event_id').value = event.id || '';
+    document.getElementById('event_title').value = event.title || '';
+    document.getElementById('event_start').value = event.start || '';
+    document.getElementById('event_end').value = event.end || '';
+    document.getElementById('event_description').value = event.description || '';
+    document.getElementById('eventModal').style.display = 'block';
+    document.getElementById('deleteBtn').style.display = event.id ? 'inline-block' : 'none';
+
+    if (event.title && event.start) {
+      const start = new Date(event.start).toISOString().replace(/[-:]|\.\d{3}/g, "");
+      const end = event.end ? new Date(event.end).toISOString().replace(/[-:]|\.\d{3}/g, "") : start;
+      const title = encodeURIComponent(event.title);
+      const desc = encodeURIComponent(event.description || "");
+      const gcalURL = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${desc}`;
+
+      const linkEl = document.getElementById('gcalLink');
+      linkEl.href = gcalURL;
+      linkEl.style.display = 'inline-block';
+    } else {
+      document.getElementById('gcalLink').style.display = 'none';
+    }
+  }
+
+  function closeModal() {
+    document.getElementById('eventModal').style.display = 'none';
+  }
+
+  document.getElementById('cancelBtn').addEventListener('click', closeModal);
+
+  document.getElementById('eventForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const data = {
+      id: document.getElementById('event_id').value,
+      title: document.getElementById('event_title').value,
+      start: document.getElementById('event_start').value,
+      end: document.getElementById('event_end').value,
+      description: document.getElementById('event_description').value
+    };
+    const url = data.id ? `/app/calendar-event/${data.id}` : '/app/calendar-event';
+    const method = data.id ? 'PUT' : 'POST';
+
+    await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    closeModal();
+    calendar.refetchEvents();
+  });
+
+  document.getElementById('deleteBtn').addEventListener('click', async function () {
+    const id = document.getElementById('event_id').value;
+    if (id && confirm('Delete this event?')) {
+      await fetch(`/app/calendar-event/${id}`, { method: 'DELETE' });
+      closeModal();
+      calendar.refetchEvents();
+    }
+  });
+});
+</script>
+
+<style>
+  #calendar {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #888;
+  }
+
+  body:not(.dark) #calendar {
+    background: #ffffff;
+    color: #222;
+  }
+  body:not(.dark) .fc .fc-daygrid-day-number {
+    color: #222;
+  }
+
+  body.dark #calendar {
+    background: #1e1e1e;
+    color: #f4f4f4;
+  }
+  body.dark .fc .fc-daygrid-day-number {
+    color: #f4f4f4;
+  }
+
+  .fc-event {
+    background-color: #007bff;
+    border: none;
+    color: white;
+  }
+  body.dark .fc-event {
+    background-color: #3399ff;
+  }
+</style>
+{% endblock %}

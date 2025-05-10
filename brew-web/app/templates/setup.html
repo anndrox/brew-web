@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div style="max-width: 500px; margin: 40px auto; background-color: #2b2b2b; padding: 20px; border-radius: 8px;">
+    <h2 class="mt-4" style="text-align: center;">🧪 First-Time Setup</h2>
+
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="mb-3">
+        <label for="username" class="form-label">Admin Username</label>
+        <input type="text" class="form-control" id="username" name="username" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label">Admin Password</label>
+        <input type="password" class="form-control" id="password" name="password" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="confirm_password" class="form-label">Re-enter Password</label>
+        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Create Admin Account</button>
+    </form>
+  </div>
+{% endblock %}

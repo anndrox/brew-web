@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ recipe.name }}</h1>
+<p><strong>Alcohol Type:</strong> {{ recipe.alcohol_type or "N/A" }}</p>
+<p><strong>Water Type:</strong> {{ recipe.water_type or 'Not specified' }}</p>
+
+<h3>Instructions</h3>
+<p>{{ recipe.content.replace('\n', '<br>') | safe }}</p>
+<h3>Ingredients (per gallon)</h3>
+{% if recipe.ingredients %}
+  <ul>
+    {% for ingredient in recipe.ingredients %}
+      <li>
+        {{ ingredient.amount_per_gallon }} {{ ingredient.unit }} {{ ingredient.name }}
+        {% if ingredient.note %} - <em>{{ ingredient.note }}</em>{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No ingredients listed.</p>
+{% endif %}
+
+<h3>Scaled Ingredients for {{ target_batch }} gallon{{ target_batch > 1 and 's' or '' }}</h3>
+{% if recipe.ingredients %}
+  <ul>
+    {% for ingredient in recipe.ingredients %}
+      <li>
+        {{ (ingredient.amount_per_gallon * target_batch)|round(2) }} {{ ingredient.unit }} {{ ingredient.name }}
+        {% if ingredient.note %} - <em>{{ ingredient.note }}</em>{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No ingredients to scale.</p>
+{% endif %}
+
+<form method="get">
+  <label for="target_batch">Change batch size:</label>
+  <input type="number" min="1" name="target_batch" value="{{ target_batch }}">
+  <button type="submit">Update</button>
+</form>
+
+<p>
+  <a href="{{ url_for('routes.recipes_bp.edit_recipe', recipe_id=recipe.id) }}">✏️ Edit Recipe</a> |
+  <form action="{{ url_for('routes.recipes_bp.delete_recipe', recipe_id=recipe.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this recipe?');">
+    <button type="submit" style="color: red;">🗑 Delete</button>
+  </form>
+</p>
+
+<p><a href="{{ url_for('routes.index') }}">← Back to Home</a></p>
+{% endblock %}

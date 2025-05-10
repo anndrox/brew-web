@@ -1,0 +1,35 @@
+/* Apply only to the calculators index page */
+body.calculators-page {
+    background: #222;
+    color: #eee;
+    font-size: 18px;
+    line-height: 1.8;
+}
+
+/* Ensure list items and links match the site's dark theme */
+body.calculators-page a {
+    color: #7ec8f2;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+body.calculators-page a:hover {
+    color: #aee1ff;
+    text-decoration: underline;
+}
+
+body.calculators-page ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+body.calculators-page li {
+    margin-bottom: 20px;
+}
+
+body.calculators-page small {
+    display: block;
+    margin-top: 4px;
+    color: #ccc;
+    font-size: 0.9em;
+}

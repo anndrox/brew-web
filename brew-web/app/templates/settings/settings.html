@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; min-height: 80vh;">
+    <!-- Sidebar -->
+    {% include "settings/_sidebar.html" %}
+		{% if update_info.update_available %}
+		  <div style="color: orange;">
+			🔔 New version available: <strong>{{ update_info.latest }}</strong><br>
+			You are running: {{ update_info.current }}
+		  </div>
+		{% else %}
+		  <div style="color: green;">
+			✅ You are running the latest version ({{ update_info.current }})
+		  </div>
+		{% endif %}
+
+</div>
+
+    <!-- Main Content Area -->
+    <div style="flex: 1;">
+        <h2>Welcome to Settings</h2>
+        <p>Select an option from the sidebar to begin customizing your experience.</p>
+    </div>
+</div>
+{% endblock %}

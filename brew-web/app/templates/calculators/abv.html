@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>ABV Calculator</h1>
+<p>Calculate Alcohol by Volume using Original Gravity (OG) and Final Gravity (FG).</p>
+
+<form method="POST">
+  <label for="og">Original Gravity (OG):</label><br>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <input type="number" name="og" step="0.001" required><br><br>
+
+  <label for="fg">Final Gravity (FG):</label><br>
+  <input type="number" name="fg" step="0.001" required><br><br>
+
+  <button type="submit">Calculate ABV</button>
+</form>
+
+{% if result is not none %}
+  <h3>Result</h3>
+  <p><strong>ABV:</strong> {{ result }}%</p>
+{% endif %}
+
+<a href="{{ url_for('routes.calculator_bp.calculator_index') }}">← Back to Calculators</a>
+{% endblock %}

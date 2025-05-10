@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Batch: {{ batch.name }}</h1>
+<p><strong>Start Date:</strong>
+  {% if batch.start_date %}
+    {{ batch.start_date.strftime('%Y-%m-%d') }}
+  {% else %}
+    <em>Not set</em>
+  {% endif %}
+</p>
+<p><strong>End Date:</strong>
+  {% if batch.end_date %}
+    {{ batch.end_date.strftime('%Y-%m-%d') }}
+  {% else %}
+    <em>Still in progress</em>
+  {% endif %}
+</p>
+<p><strong>ABV:</strong> {{ batch.abv|round(2) if batch.abv is not none else 'N/A' }}%</p>
+<p><strong>Yeast:</strong> {{ batch.yeast_type or 'N/A' }}</p>
+<p><strong>Water Type:</strong> {{ batch.water_type or 'N/A' }}</p>
+<p><strong>Fermentation Temp:</strong> {{ batch.fermentation_temp or 'N/A' }}</p>
+<p><strong>Recipe:</strong>
+  {% if batch.recipe %}
+    <a href="{{ url_for('routes.recipes_bp.view_recipe', recipe_id=batch.recipe.id) }}">{{ batch.recipe.name }}</a>
+  {% else %}
+    <em>None</em>
+  {% endif %}
+</p>
+<p><strong>Flavor Additions:</strong> {{ batch.flavor_additions or 'None' }}</p>
+<p><strong>Pectic Enzyme Used:</strong> {{ 'Yes' if batch.pectic_used else 'No' }}</p>
+<p><strong>Backsweetened:</strong> {{ 'Yes' if batch.backsweetened else 'No' }}</p>
+<p><strong>Notes:</strong><br/> {{ batch.notes | nl2br if batch.notes else 'None' }}</p>
+<hr/>
+<h2>Measurements</h2>
+
+{% if batch.measurements %}
+  <table style="width: 100%; border-collapse: collapse; margin-top: 1em;">
+<thead>
+<tr style="background-color: #333; color: #fff;">
+<th style="padding: 10px;">Date</th>
+<th style="padding: 10px;">Gravity</th>
+<th style="padding: 10px;">pH</th>
+<th style="padding: 10px;">Temp (°F)</th>
+<th style="padding: 10px;">Notes</th>
+<th style="padding: 10px;">Actions</th>
+</tr>
+</thead>
+<tbody>
+      {% for m in batch.measurements|sort(attribute='date') %}
+      <tr style="background-color: {% if loop.index0 % 2 == 0 %}#111{% else %}#1a1a1a{% endif %}; color: #eee;">
+<td style="padding: 10px;">{{ m.date.strftime('%Y-%m-%d') if m.date else '—' }}</td>
+<td style="padding: 10px;">{{ m.gravity if m.gravity is not none else 'N/A' }}</td>
+<td style="padding: 10px;">{{ m.ph if m.ph is not none else 'N/A' }}</td>
+<td style="padding: 10px;">{{ m.temperature if m.temperature is not none else 'N/A' }}</td>
+<td style="padding: 10px;">{{ m.notes or '—' }}</td>
+<td style="padding: 10px;">
+<form action="{{ url_for('routes.delete_measurement', measurement_id=m.id) }}" method="POST" onsubmit="return confirm('Delete this measurement?');" style="display:inline;"><input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+<button style="color: red;" title="Delete" type="submit">❌</button>
+</form>
+</td>
+</tr>
+      {% endfor %}
+    </tbody>
+</table>
+{% else %}
+  <p>No measurements logged yet.</p>
+{% endif %}
+{% if batch.initial_gravity and batch.batch_size %}
+  <hr/>
+  <h3>TOSNA Calculator</h3>
+  <form method="POST" action="{{ url_for('routes.batches_bp.calculate_tosna', batch_id=batch.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <label><input type="checkbox" name="add_to_calendar" /> Add TOSNA days to calendar</label><br/><br/>
+    <button type="submit">Calculate TOSNA</button>
+  </form>
+{% endif %}
+
+{% if batch.tosna_enabled %}
+  <hr/>
+  <h3>TOSNA Schedule</h3>
+  <p><strong>Total:</strong> {{ batch.tosna_total }} g (~{{ (batch.tosna_total / 1.25) | round(2) }} tsp)</p>
+  <p><strong>Per Day:</strong> {{ batch.tosna_per_day }} g (~{{ (batch.tosna_per_day / 1.25) | round(2) }} tsp)</p>
+
+  {% if batch.start_date %}
+    <h4>Schedule:</h4>
+    <ul>
+      {% for i in range(4) %}
+        <li>Day {{ i }} ({{ (batch.start_date + timedelta(days=i)).strftime('%Y-%m-%d') }}): 
+          {{ batch.tosna_per_day }} g (~{{ (batch.tosna_per_day / 1.25) | round(2) }} tsp)
+        </li>
+      {% endfor %}
+    </ul>
+
+    <form method="POST" action="{{ url_for('routes.batches_bp.add_tosna_to_calendar', batch_id=batch.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit">Add TOSNA to Calendar</button>
+    </form>
+  {% endif %}
+{% endif %}
+<p style="margin-top: 1.5em;">
+<a href="{{ url_for('routes.new_measurement', batch_id=batch.id) }}">➕ Add Measurement</a> |
+  <a href="{{ url_for('routes.batches_bp.edit_batch', batch_id=batch.id) }}">✏️ Edit Batch</a> |
+</p>
+<form action="{{ url_for('routes.batches_bp.delete_batch', batch_id=batch.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this batch?');" style="margin-top: 1em;"><input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+<button style="color: red;" type="submit">🗑️ Delete Batch</button>
+</form>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>All Recipes</h1>
+
+<h2>🍯 Mead Recipes</h2>
+<ul>
+  {% for recipe in mead_recipes %}
+    <li><a href="{{ url_for('routes.recipes_bp.view_recipe', recipe_id=recipe.id) }}">{{ recipe.name }}</a></li>
+  {% else %}
+    <li>No mead recipes yet.</li>
+  {% endfor %}
+</ul>
+
+<h2>🍷 Wine Recipes</h2>
+<ul>
+  {% for recipe in wine_recipes %}
+    <li><a href="{{ url_for('routes.recipes_bp.view_recipe', recipe_id=recipe.id) }}">{{ recipe.name }}</a></li>
+  {% else %}
+    <li>No wine recipes yet.</li>
+  {% endfor %}
+</ul>
+
+<h2>🍺 Beer Recipes</h2>
+<ul>
+  {% for recipe in beer_recipes %}
+    <li><a href="{{ url_for('routes.recipes_bp.view_recipe', recipe_id=recipe.id) }}">{{ recipe.name }}</a></li>
+  {% else %}
+    <li>No beer recipes yet.</li>
+  {% endfor %}
+</ul>
+
+<h2>📦 Other Recipes</h2>
+<ul>
+  {% for recipe in other_recipes %}
+    <li><a href="{{ url_for('routes.recipes_bp.view_recipe', recipe_id=recipe.id) }}">{{ recipe.name }}</a></li>
+  {% else %}
+    <li>No uncategorized recipes.</li>
+  {% endfor %}
+</ul>
+
+{% endblock %}

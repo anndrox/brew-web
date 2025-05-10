@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Honey Required Calculator</h1>
+
+<p>Estimate the amount of honey (in pounds) needed to reach a target original gravity.</p>
+
+<form method="POST">
+  <label for="volume">Batch Volume (gallons):</label><br>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <input type="number" name="volume" step="0.1" required><br><br>
+
+  <label for="target_gravity">Target Gravity (e.g. 1.090):</label><br>
+  <input type="number" name="target_gravity" step="0.001" required><br><br>
+
+  <button type="submit">Calculate</button>
+</form>
+
+{% if result is not none %}
+  <h3>Result:</h3>
+  {% if result == "Invalid input" %}
+    <p style="color:red;">Please enter valid numeric values.</p>
+  {% else %}
+    <p>You will need approximately <strong>{{ result }} lbs</strong> of honey.</p>
+  {% endif %}
+{% endif %}
+
+<a href="{{ url_for('routes.calculator_bp.calculator_index') }}">← Back to Calculators</a>
+{% endblock %}
