@@ -1,5 +1,28 @@
 # Brew-Web Changelog
 
+## [v1.3.1] - 2025-05-10
+### Added
+- TONSA additions to current batches and suggested feeding schedule and the ability to add it to the calendar
+- Dynamic ingredient editing
+ -Users can now:
+   -See existing ingredients per gallon (looped from recipe.ingredients).
+   -Add new ingredient rows dynamically with JavaScript.
+   -Remove ingredients via a "❌" button.
+- Ingredient indexing logic
+  -JavaScript variable ingredientIndex is initialized from recipe.ingredients|length.
+  -Keeps new fields indexed properly when dynamically added.
+- Dropdown enhancements
+  -Both alcohol_type and water_type now:
+    -Show current value.
+    -Pre-select the appropriate option on load.
+    -Are built to be extensible if more types are added later.
+### Changed
+- Updated edit_recipe.html structure
+
+### Fixed
+- Calculator pages and routes
+- (/) routes
+
 ## [v1.3.0] - 2025-05-09
 
 ### Added
