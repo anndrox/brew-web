@@ -145,3 +145,11 @@ brew-web/
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 MIT © 2025 Scott Jones
+
+![2025-05-10 11_19_52-Brew Log](https://github.com/user-attachments/assets/f31efcbd-fc3a-460a-b28d-fc97d219fe2b)
+![2025-05-10 11_20_06-Brew Log](https://github.com/user-attachments/assets/852049ba-f0d2-4f56-a42a-014f2755ff12)
+![2025-05-10 11_20_53-Brew Log](https://github.com/user-attachments/assets/cb4d8620-dc28-4577-b56f-8710662ad770)
+![2025-05-10 11_21_05-Brew Log](https://github.com/user-attachments/assets/e1bc6fc8-35dd-4929-ab87-74314be23f1e)
+![2025-05-10 11_21_22-Brew Log](https://github.com/user-attachments/assets/77b513a0-a965-4c65-9064-ad0755befc0b)
+![2025-05-10 11_21_34-Brew Log](https://github.com/user-attachments/assets/a6cf1218-d004-42dd-b83d-40aab4b24e34)
+
