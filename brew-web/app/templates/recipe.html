@@ -3,6 +3,13 @@
 <h1>{{ recipe.name }}</h1>
 <p><strong>Created:</strong> {{ recipe.created_date.strftime('%Y-%m-%d') }}</p>
 <p><strong>Alcohol Type:</strong> {{ recipe.alcohol_type or "N/A" }}</p>
+<p><strong>Yeast:</strong>
+  {% if recipe.yeast %}
+    {{ recipe.yeast.name }} ({{ recipe.yeast.alcohol_type }})
+  {% else %}
+    Not specified
+  {% endif %}
+</p>
 <h3>Instructions</h3>
 <pre style="white-space: pre-wrap;">{{ recipe.instructions }}</pre>
 <h3>Notes</h3>

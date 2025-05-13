@@ -16,7 +16,13 @@
   {% endif %}
 </p>
 <p><strong>ABV:</strong> {{ batch.abv|round(2) if batch.abv is not none else 'N/A' }}%</p>
-<p><strong>Yeast:</strong> {{ batch.yeast_type or 'N/A' }}</p>
+<p><strong>Yeast:</strong>
+  {% if batch.yeast %}
+    {{ batch.yeast.name }} ({{ batch.yeast.alcohol_type }})
+  {% else %}
+    N/A
+  {% endif %}
+</p>
 <p><strong>Water Type:</strong> {{ batch.water_type or 'N/A' }}</p>
 <p><strong>Fermentation Temp:</strong> {{ batch.fermentation_temp or 'N/A' }}</p>
 <p><strong>Recipe:</strong>

@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Edit Recipe</h1>
+
+<!-- Quill CSS -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
 <form method="POST">
   <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 
@@ -13,10 +17,24 @@
     <option value="Mead" {% if recipe.alcohol_type == "Mead" %}selected{% endif %}>Mead</option>
     <option value="Wine" {% if recipe.alcohol_type == "Wine" %}selected{% endif %}>Wine</option>
     <option value="Beer" {% if recipe.alcohol_type == "Beer" %}selected{% endif %}>Beer</option>
+	<option value="Hard Cider" {% if recipe.alcohol_type == "Hard Cider" %}selected{% endif %}>Hard Cider</option>
+	
+  </select><br/><br/>
+
+  <label for="yeast_id">Yeast Type:</label>
+  <select id="yeast_id" name="yeast_id">
+    <option value="">-- Select Yeast --</option>
+    {% for yeast in yeasts %}
+      <option value="{{ yeast.id }}"
+        {% if recipe and recipe.yeast_id == yeast.id %}selected{% endif %}>
+        {{ yeast.name }} ({{ yeast.alcohol_type }})
+      </option>
+    {% endfor %}
   </select><br/><br/>
 
   <label for="content">Instructions:</label><br/>
-  <textarea cols="50" id="content" name="content" rows="10">{{ recipe.content }}</textarea><br/><br/>
+  <div id="quill-editor" style="height: 200px; background-color: white;"></div>
+  <input type="hidden" name="content" id="content"><br/><br/>
 
   <h3>Ingredients (per gallon)</h3>
   <div id="ingredient-container">
@@ -51,9 +69,33 @@
   <a href="{{ url_for('routes.recipes_bp.view_recipe', recipe_id=recipe.id) }}">↩ Back to Recipe</a>
 </p>
 
+<!-- Quill JS -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 <script>
-  let ingredientIndex = {{ recipe.ingredients|length }};
+  const quill = new Quill('#quill-editor', {
+    theme: 'snow',
+    placeholder: 'Write your instruction steps here...',
+    modules: {
+      toolbar: [
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ 'align': [] }],
+        ['link'],
+        ['clean']
+      ]
+    }
+  });
 
+  // Set initial content from server
+  const existingInstructions = `{{ recipe.content | safe }}`;
+  quill.root.innerHTML = existingInstructions;
+
+  // Copy HTML to hidden input on submit
+  document.querySelector('form').addEventListener('submit', function () {
+    document.getElementById('content').value = quill.root.innerHTML;
+  });
+
+  let ingredientIndex = {{ recipe.ingredients|length }};
   function addIngredient() {
     const container = document.getElementById('ingredient-container');
     const div = document.createElement('div');

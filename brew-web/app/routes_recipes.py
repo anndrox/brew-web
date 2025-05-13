@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
-from app.models import db, Recipe, Ingredient
+from app.models import db, Recipe, Ingredient, Yeast
 from app.utils import role_required
 
 recipes_bp = Blueprint("recipes_bp", __name__)
@@ -28,11 +28,13 @@ def new_recipe():
         name = request.form['name']
         content = request.form['content']
         batch_size = int(request.form['batch_size'])
+
         recipe = Recipe(
             name=name,
             content=content,
             alcohol_type=request.form.get('alcohol_type') or None,
-            water_type=request.form.get('water_type') or None
+            water_type=request.form.get('water_type') or None,
+            yeast_id=request.form.get('yeast_id') or None  # ✅ yeast_id is here
         )
         db.session.add(recipe)
         db.session.flush()
@@ -56,7 +58,8 @@ def new_recipe():
         flash("New recipe with ingredients added.", "success")
         return redirect(url_for('routes.recipes_bp.index'))
 
-    return render_template('new_recipe.html')
+    yeasts = Yeast.query.order_by(Yeast.name).all()
+    return render_template('new_recipe.html', yeasts=yeasts)
 
 @recipes_bp.route('/recipes/<int:recipe_id>')
 @login_required
@@ -75,6 +78,8 @@ def edit_recipe(recipe_id):
         recipe.content = request.form['content']
         recipe.alcohol_type = request.form.get('alcohol_type') or None
         recipe.water_type = request.form.get('water_type') or None
+        recipe.yeast_id = request.form.get('yeast_id') or None
+
         Ingredient.query.filter_by(recipe_id=recipe.id).delete()
 
         i = 0
@@ -96,7 +101,9 @@ def edit_recipe(recipe_id):
         flash('Recipe updated successfully!', 'success')
         return redirect(url_for('routes.recipes_bp.view_recipe', recipe_id=recipe.id))
 
-    return render_template('edit_recipe.html', recipe=recipe)
+    yeasts = Yeast.query.order_by(Yeast.name).all()
+    return render_template('edit_recipe.html', recipe=recipe, yeasts=yeasts)
+
 
 @recipes_bp.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
 @login_required

@@ -1,7 +1,7 @@
 import os
 
 class Config:
-    VERSION = "1.3.1"
+    VERSION = "1.4.0"
     # 🔐 REQUIRED: Change this to a secure random string before deployment
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'changeme-in-production'  # <-- CHANGE THIS
 

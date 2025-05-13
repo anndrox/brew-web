@@ -84,6 +84,36 @@ a:hover {
 }
 
 /* Yeast table row color overrides */
+/* Dark mode Quill editor tweaks */
+body.dark-mode .ql-toolbar {
+  background-color: #2e1f13 !important;
+  border-color: #444 !important;
+  color: #f4e8c1 !important;
+}
+
+body.dark-mode .ql-toolbar button svg {
+  fill: #f4e8c1 !important;
+}
+
+body.dark-mode .ql-toolbar .ql-picker-label,
+body.dark-mode .ql-toolbar .ql-picker-item {
+  color: #f4e8c1 !important;
+}
+
+body.dark-mode .ql-container {
+  border-color: #444 !important;
+}
+
+body.dark-mode .ql-editor {
+  background-color: #1e1e1e !important;
+  color: #f4e8c1 !important;
+}
+
+body.dark-mode .ql-editor::before {
+  color: #aaa !important;
+  font-style: italic;
+}
+
 .dark-mode .yeast-row.even {
     background-color: #111;
     color: #eee;

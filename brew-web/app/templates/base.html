@@ -25,7 +25,7 @@
                     <li><a href="{{ url_for('routes.batches_bp.list_batches') }}">📋 View Batches</a></li>
                     <li><a href="{{ url_for('routes.calendar_bp.calendar') }}">📅 Calendar</a></li>
                     <li><a href="{{ url_for('routes.stats_bp.view_stats') }}">📊 View Stats</a></li>
-                    <li><a href="{{ url_for('routes.yeasts') }}">🧫 Yeast Guide</a></li>
+                    <li><a href="{{ url_for('routes.yeast_bp.list_yeasts') }}">🧫 Yeast Guide</a></li>
                     <li><a href="{{ url_for('routes.calculator_bp.calculator_index') }}">🧮 Calculators</a></li>
                     <li><a href="javascript:void(0);" onclick="toggleDropdown('settings-menu')">⚙️ Settings ▾</a>
 						<ul id="settings-menu" style="display: {{ 'block' if request.args.get('open') == 'settings' else 'none' }}; list-style: none; margin-left: 15px; padding-left: 0;">

@@ -3,7 +3,13 @@
 <h1>{{ recipe.name }}</h1>
 <p><strong>Alcohol Type:</strong> {{ recipe.alcohol_type or "N/A" }}</p>
 <p><strong>Water Type:</strong> {{ recipe.water_type or 'Not specified' }}</p>
-
+<p><strong>Yeast:</strong>
+  {% if recipe.yeast %}
+    {{ recipe.yeast.name }} ({{ recipe.yeast.alcohol_type }})
+  {% else %}
+    Not specified
+  {% endif %}
+</p>
 <h3>Instructions</h3>
 <p>{{ recipe.content.replace('\n', '<br>') | safe }}</p>
 <h3>Ingredients (per gallon)</h3>

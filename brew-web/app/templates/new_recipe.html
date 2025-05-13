@@ -18,6 +18,9 @@
   {% endif %}
 {% endwith %}
 
+<!-- Quill styles -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
 <h1>New Recipe</h1>
 
 <form method="POST">
@@ -30,13 +33,25 @@
   <input min="1" name="batch_size" required type="number" value="1"/><br/><br/>
 
   <label for="alcohol_type">Alcohol Type:</label><br/>
-  <select id="alcohol_type" name="alcohol_type" required>
-    <option value="">-- Select --</option>
-    <option value="Mead">Mead</option>
-    <option value="Wine">Wine</option>
-    <option value="Beer">Beer</option>
-  </select><br/><br/>
-
+<select id="alcohol_type" name="alcohol_type" required>
+  <option value="">-- Select --</option>
+  <option value="Mead" {% if request.form.get("alcohol_type") == "Mead" %}selected{% endif %}>Mead</option>
+  <option value="Wine" {% if request.form.get("alcohol_type") == "Wine" %}selected{% endif %}>Wine</option>
+  <option value="Beer" {% if request.form.get("alcohol_type") == "Beer" %}selected{% endif %}>Beer</option>
+  <option value="Hard Cider" {% if request.form.get("alcohol_type") == "Hard Cider" %}selected{% endif %}>Hard Cider</option>
+</select>
+<br/><br/>
+  <label for="yeast_id">Yeast Type:</label><br/>
+<select id="yeast_id" name="yeast_id">
+  <option value="">-- Select Yeast --</option>
+  {% for yeast in yeasts %}
+    <option value="{{ yeast.id }}"
+      {% if request.form.get("yeast_id") and yeast.id == request.form.get("yeast_id")|int %}selected{% endif %}>
+      {{ yeast.name }} ({{ yeast.alcohol_type }})
+    </option>
+  {% endfor %}
+</select>
+<br/>
   <h3>Ingredients (per gallon)</h3>
   <div id="ingredient-container">
     <div class="ingredient-row">
@@ -59,14 +74,34 @@
   </select><br/><br/>
 
   <label for="content">Instructions:</label><br/>
-  <textarea cols="50" id="content" name="content" rows="6"></textarea><br/><br/>
+  <div id="quill-editor" style="height: 200px; background-color: white;"></div>
+  <input type="hidden" name="content" id="content"><br/><br/>
 
   <button type="submit">Create Recipe</button>
 </form>
 
 <a href="{{ url_for('routes.recipes_bp.index') }}">Cancel</a>
 
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 <script>
+  const quill = new Quill('#quill-editor', {
+    theme: 'snow',
+    placeholder: 'Write your instruction steps here...',
+    modules: {
+      toolbar: [
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ 'align': [] }],
+        ['link'],
+        ['clean']
+      ]
+    }
+  });
+
+  document.querySelector('form').addEventListener('submit', function () {
+    document.getElementById('content').value = quill.root.innerHTML;
+  });
+
   let ingredientIndex = 1;
   function addIngredient() {
     const container = document.getElementById('ingredient-container');

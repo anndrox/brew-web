@@ -1,106 +1,115 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>🍾 Yeast Guide for Mead, Wine, and Beer</h1>
+<h1>Yeast Reference</h1>
 
-<p>Explore popular yeast strains by category. Each shows alcohol tolerance, fermentation strength, sweetness retention, and common flavor profiles.</p>
+<input type="text" id="yeastSearch" placeholder="🔍 Search yeast..." style="width: 100%; padding: 10px; margin-bottom: 20px;">
 
-<details open>
-  <summary style="font-size: 1.25em; font-weight: bold; margin-top: 1em;">🍯 Mead Yeasts</summary>
-  <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: sans-serif; margin-top: 1em;">
-    <thead>
-      <tr class="background-color: #333; color: #fff;">
-        <th style="padding: 12px; border: 1px solid #444;">Yeast Name</th>
-        <th style="padding: 12px; border: 1px solid #444;">Alcohol Tolerance</th>
-        <th style="padding: 12px; border: 1px solid #444;">Fermentation Strength</th>
-        <th style="padding: 12px; border: 1px solid #444;">Sweetness Retention</th>
-        <th style="padding: 12px; border: 1px solid #444;">Flavor & Profile</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr class="background-color: #111; color: #eee;">
-        <td>Lalvin 71B-1122 🍑</td><td>14%</td><td>⭐⭐⭐</td><td>⭐⭐</td><td>Fruity, softens acidity. Great for melomels.</td>
-      </tr>
-      <tr class="background-color: #1a1a1a; color: #eee;">
-        <td>Lalvin D-47 🍏</td><td>12–14%</td><td>⭐⭐⭐</td><td>⭐⭐⭐</td><td>Full body, enhances mouthfeel and complexity.</td>
-      </tr>
-      <tr class="background-color: #111; color: #eee;">
-        <td>Lalvin EC-1118 💪</td><td>18%</td><td>⭐⭐⭐⭐⭐</td><td>⭐</td><td>Neutral, very strong fermenter, great for dry meads.</td>
-      </tr>
-      <tr class="background-color: #1a1a1a; color: #eee;">
-        <td>Red Star Premier Blanc</td><td>13–15%</td><td>⭐⭐⭐⭐</td><td>⭐</td><td>Neutral, clean profile. Good for dry traditional meads.</td>
-      </tr>
-      <tr class="background-color: #111; color: #eee;">
-        <td>Wyeast 4184 (Sweet Mead)</td><td>11–12%</td><td>⭐</td><td>⭐⭐⭐⭐</td><td>Low attenuation, ideal for dessert meads.</td>
-      </tr>
-      <tr class="background-color: #1a1a1a; color: #eee;">
-        <td>Mangrove Jack’s M05</td><td>14%</td><td>⭐⭐⭐</td><td>⭐⭐</td><td>Fruity, floral esters. Suited for all-purpose meads.</td>
-      </tr>
-    </tbody>
-  </table>
-</details>
+<script>
+function filterYeastTable() {
+  const input = document.getElementById("yeastSearch").value.toLowerCase();
+  const rows = document.querySelectorAll(".yeast-row");
+  rows.forEach(row => {
+    row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
+  });
+}
+document.getElementById("yeastSearch").addEventListener("input", filterYeastTable);
+</script>
 
-<details open>
-  <summary style="font-size: 1.25em; font-weight: bold; margin-top: 1em;">🍷 Wine Yeasts</summary>
-  <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: sans-serif; margin-top: 1em;">
-    <thead>
-      <tr class="background-color: #333; color: #fff;">
-        <th style="padding: 12px; border: 1px solid #444;">Yeast Name</th>
-        <th style="padding: 12px; border: 1px solid #444;">Alcohol Tolerance</th>
-        <th style="padding: 12px; border: 1px solid #444;">Fermentation Strength</th>
-        <th style="padding: 12px; border: 1px solid #444;">Sweetness Retention</th>
-        <th style="padding: 12px; border: 1px solid #444;">Flavor & Profile</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr class="background-color: #111; color: #eee;">
-        <td>Lalvin RC-212 🍒</td><td>13–15%</td><td>⭐⭐⭐</td><td>⭐⭐</td><td>Enhances color, ideal for Pinot Noir and red wines.</td>
-      </tr>
-      <tr class="background-color: #1a1a1a; color: #eee;">
-        <td>Lalvin D-47 🍏</td><td>12–14%</td><td>⭐⭐⭐</td><td>⭐⭐⭐</td><td>Great for white wines. Adds body and roundness.</td>
-      </tr>
-      <tr class="background-color: #111; color: #eee;">
-        <td>Lalvin K1-V1116 🌼</td><td>16–18%</td><td>⭐⭐⭐⭐</td><td>⭐</td><td>Preserves floral aromas. Great for aromatic whites.</td>
-      </tr>
-      <tr class="background-color: #1a1a1a; color: #eee;">
-        <td>Red Star Premier Cuvée</td><td>16–18%</td><td>⭐⭐⭐⭐⭐</td><td>⭐</td><td>Strong fermenter, perfect for sparkling wines.</td>
-      </tr>
-      <tr class="background-color: #111; color: #eee;">
-        <td>Red Star Montrachet</td><td>13–15%</td><td>⭐⭐⭐</td><td>⭐⭐</td><td>Enhances body and complexity. Good for reds & whites.</td>
-      </tr>
-    </tbody>
-  </table>
-</details>
+{% for category, yeast_list in [
+    ("Mead", mead_yeasts),
+    ("Wine", wine_yeasts),
+    ("Beer", beer_yeasts),
+    ("Hard Cider", cider_yeasts),
+    ("Other", other_yeasts)
+] if yeast_list %}
+  <details open style="margin-bottom: 2em;">
+    <summary><h2 style="display: inline;">
+      {% if category == "Mead" %}🍯{% elif category == "Wine" %}🍷
+      {% elif category == "Beer" %}🍺{% elif category == "Hard Cider" %}🍎
+      {% else %}📦{% endif %}
+      {{ category }} Yeasts
+    </h2></summary>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+      <thead>
+        <tr style="background-color: #333; color: #fff;">
+          <th>Name</th>
+          <th>Tolerance</th>
+          <th>Strength</th>
+          <th>Sweetness</th>
+          <th>Flocculation</th>
+          <th>Attenuation</th>
+          <th>Notes</th>
+          {% if current_user.role == 'admin' %}
+          <th>Actions</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for yeast in yeast_list %}
+        <tr class="yeast-row" style="background-color: {% if loop.index0 % 2 == 0 %}#111{% else %}#1a1a1a{% endif %}; color: #eee;">
+          <td>{{ yeast.name }}</td>
+          <td>{{ yeast.tolerance or '—' }}</td>
+          <td>{{ yeast.strength or '—' }}</td>
+          <td>{{ yeast.sweetness_retention or '—' }}</td>
+          <td>{{ yeast.flocculation or '—' }}</td>
+          <td>{{ yeast.attenuation or '—' }}</td>
+          <td>{{ yeast.notes or '—' }}</td>
+          {% if current_user.role == 'admin' %}
+          <td>
+            {% if not yeast.is_default %}
+              <form method="POST" action="{{ url_for('routes.yeast_bp.delete_yeast', yeast_id=yeast.id) }}" style="display:inline;" onsubmit="return confirm('Delete this yeast?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button title="Delete" style="color:red;">❌</button>
+              </form>
+              <a href="{{ url_for('routes.yeast_bp.edit_yeast', yeast_id=yeast.id) }}">✏️</a>
+            {% else %}
+              🔒
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+{% endfor %}
 
-<details open>
-  <summary style="font-size: 1.25em; font-weight: bold; margin-top: 1em;">🍺 Beer Yeasts</summary>
-  <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: sans-serif; margin-top: 1em;">
-    <thead>
-      <tr class="background-color: #333; color: #fff;">
-        <th style="padding: 12px; border: 1px solid #444;">Yeast Name</th>
-        <th style="padding: 12px; border: 1px solid #444;">Alcohol Tolerance</th>
-        <th style="padding: 12px; border: 1px solid #444;">Fermentation Strength</th>
-        <th style="padding: 12px; border: 1px solid #444;">Sweetness Retention</th>
-        <th style="padding: 12px; border: 1px solid #444;">Flavor & Profile</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr class="background-color: #111; color: #eee;">
-        <td>Safale US-05 🇺🇸</td><td>9–11%</td><td>⭐⭐⭐⭐</td><td>⭐</td><td>Clean, neutral American ale yeast. Great all-rounder.</td>
-      </tr>
-      <tr class="background-color: #1a1a1a; color: #eee;">
-        <td>Safale S-04</td><td>9–11%</td><td>⭐⭐⭐</td><td>⭐⭐</td><td>English ale yeast; fruity and malty profile.</td>
-      </tr>
-      <tr class="background-color: #111; color: #eee;">
-        <td>Wyeast 1056</td><td>11%</td><td>⭐⭐⭐⭐</td><td>⭐</td><td>American Ale yeast; crisp and clean. Good attenuation.</td>
-      </tr>
-      <tr class="background-color: #1a1a1a; color: #eee;">
-        <td>Wyeast 3068 🍌</td><td>10%</td><td>⭐⭐⭐</td><td>⭐⭐</td><td>Classic banana and clove esters. Perfect for hefeweizen.</td>
-      </tr>
-      <tr class="background-color: #111; color: #eee;">
-        <td>Fermentis W-34/70</td><td>9–11%</td><td>⭐⭐⭐⭐</td><td>⭐</td><td>German lager yeast. Clean, malty profile.</td>
-      </tr>
-    </tbody>
-  </table>
-</details>
+{% if current_user.role == 'admin' %}
+<hr/>
+<h3>Add New Yeast</h3>
+<form method="POST" action="{{ url_for('routes.yeast_bp.add_yeast') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Name:</label><br/>
+  <input name="name" required><br/>
 
+  <label>Alcohol Type:</label><br/>
+  <select name="alcohol_type" required>
+    <option value="Mead">Mead</option>
+    <option value="Wine">Wine</option>
+    <option value="Beer">Beer</option>
+    <option value="Hard Cider">Hard Cider</option>
+    <option value="Other">Other</option>
+  </select><br/>
+
+  <label>Alcohol Tolerance:</label><br/>
+  <input name="tolerance"><br/>
+
+  <label>Fermentation Strength:</label><br/>
+  <input name="strength"><br/>
+
+  <label>Sweetness Retention:</label><br/>
+  <input name="sweetness_retention"><br/>
+
+  <label>Flocculation:</label><br/>
+  <input name="flocculation"><br/>
+
+  <label>Attenuation (%):</label><br/>
+  <input name="attenuation"><br/>
+
+  <label>Notes:</label><br/>
+  <textarea name="notes" rows="3" cols="40"></textarea><br/><br/>
+
+  <button type="submit">➕ Add Yeast</button>
+</form>
+{% endif %}
 {% endblock %}

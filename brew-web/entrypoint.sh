@@ -10,6 +10,9 @@ fi
 flask db migrate -m "Auto migration" || true
 flask db upgrade || true
 
+echo "🌱 Seeding yeast types (if missing)..."
+flask seed-yeasts || true
+
 exec gunicorn -w 4 -b 0.0.0.0:4452 wsgi:app \
   --access-logfile logs/access.log \
   --error-logfile logs/brewweb.log

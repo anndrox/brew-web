@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, request, url_for, flash
 from flask_login import login_required
 from app.decorators import role_required
-from .models import db, Batch, Recipe
+from .models import db, Batch, Recipe, Yeast
 from datetime import datetime, timedelta
 from app.models import CalendarEvent
 
@@ -14,8 +14,10 @@ def list_batches():
     mead_batches = Batch.query.filter_by(alcohol_type='Mead').order_by(Batch.start_date.desc()).all()
     wine_batches = Batch.query.filter_by(alcohol_type='Wine').order_by(Batch.start_date.desc()).all()
     beer_batches = Batch.query.filter_by(alcohol_type='Beer').order_by(Batch.start_date.desc()).all()
+    cider_batches = Batch.query.filter_by(alcohol_type='Hard Cider').order_by(Batch.start_date.desc()).all()
+
     other_batches = Batch.query.filter(
-        ~Batch.alcohol_type.in_(['Mead', 'Wine', 'Beer']) | (Batch.alcohol_type == None)
+        ~Batch.alcohol_type.in_(['Mead', 'Wine', 'Beer', 'Hard Cider']) | (Batch.alcohol_type == None)
     ).order_by(Batch.start_date.desc()).all()
 
     return render_template(
@@ -23,6 +25,7 @@ def list_batches():
         mead_batches=mead_batches,
         wine_batches=wine_batches,
         beer_batches=beer_batches,
+        cider_batches=cider_batches,
         other_batches=other_batches
     )
 
@@ -37,11 +40,32 @@ def view_batch(batch_id):
 @role_required('admin', 'editor')
 def edit_batch(batch_id):
     batch = Batch.query.get_or_404(batch_id)
+    recipes = Recipe.query.order_by(Recipe.name).all()
+    yeasts = Yeast.query.order_by(Yeast.name).all()
+
     if request.method == 'POST':
         batch.name = request.form.get('name')
+        batch.recipe_id = request.form.get('recipe_id') or None
+        batch.yeast_id = request.form.get('yeast_id') or None
+        batch.start_date = request.form.get('start_date') or None
+        batch.end_date = request.form.get('end_date') or None
+        batch.batch_size = request.form.get('batch_size') or None
+        batch.initial_gravity = request.form.get('initial_gravity') or None
+        batch.final_gravity = request.form.get('final_gravity') or None
+        batch.fermentation_temp = request.form.get('fermentation_temp') or None
+        batch.water_type = request.form.get('water_type') or None
+        batch.yeast_type = request.form.get('yeast_type') or None
+        batch.tosna_enabled = 'enable_tosna' in request.form
+        batch.backsweetened = 'backsweetened' in request.form
+        batch.pectic_used = 'pectic_used' in request.form
+        batch.flavor_additions = request.form.get('flavor_additions') or None
+        batch.notes = request.form.get('notes') or None
+
         db.session.commit()
-        return redirect(url_for('batches_bp.view_batch', batch_id=batch.id))
-    return render_template('edit_batch.html', batch=batch)
+        flash("Batch updated successfully.", "success")
+        return redirect(url_for('routes.batches_bp.view_batch', batch_id=batch.id))
+
+    return render_template('edit_batch.html', batch=batch, recipes=recipes, yeasts=yeasts)
     
 @batches_bp.route('/<int:batch_id>/delete', methods=['POST'])
 @login_required
@@ -58,6 +82,7 @@ def delete_batch(batch_id):
 @role_required('admin', 'editor')
 def new_batch():
     recipes = Recipe.query.order_by(Recipe.name).all()
+    yeasts = Yeast.query.order_by(Yeast.name).all()
     show_warning = len(recipes) == 0
 
     if request.method == 'POST':
@@ -68,7 +93,6 @@ def new_batch():
         tosna_per_day = None
         tosna_enabled = 'enable_tosna' in request.form
 
-        # Validate recipe ID
         try:
             recipe_id = int(recipe_id_raw)
             recipe = Recipe.query.get(recipe_id)
@@ -78,12 +102,10 @@ def new_batch():
             flash("A valid recipe must be selected.", "danger")
             return redirect(url_for('routes.batches_bp.new_batch'))
 
-        # Validate name
         if not name:
             flash("Batch name is required.", "danger")
             return redirect(url_for('routes.batches_bp.new_batch'))
 
-        # Validate start date
         if not start_date_raw:
             flash("Start date is required.", "danger")
             return redirect(url_for('routes.batches_bp.new_batch'))
@@ -105,6 +127,7 @@ def new_batch():
             except:
                 flash("Could not calculate TOSNA due to missing or invalid values.", "warning")
                 tosna_enabled = False
+
         try:
             batch_size = float(request.form['batch_size'])
             og = float(request.form['initial_gravity'])
@@ -116,23 +139,24 @@ def new_batch():
             flash("Could not calculate TOSNA due to missing or invalid values.", "warning")
             tosna_enabled = False
 
-        # Create batch
         batch = Batch(
             name=name,
             recipe_id=recipe_id,
             start_date=start_date,
             alcohol_type=recipe.alcohol_type,
+            yeast_id=request.form.get('yeast_id') or None,
             tosna_enabled=tosna_enabled,
             tosna_total=tosna_total,
             tosna_per_day=tosna_per_day
-)
+        )
 
         db.session.add(batch)
         db.session.commit()
         flash("Batch created successfully.", "success")
         return redirect(url_for('routes.batches_bp.list_batches'))
 
-    return render_template('new_batch.html', recipes=recipes, show_warning=show_warning)
+    return render_template('new_batch.html', recipes=recipes, yeasts=yeasts, show_warning=show_warning)
+
     
 ### Calculator additions ###
 

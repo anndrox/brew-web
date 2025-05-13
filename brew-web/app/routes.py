@@ -89,11 +89,6 @@ def delete_measurement(measurement_id):
     flash("Measurement deleted successfully.", "success")
     return redirect(url_for('routes.batches_bp.view_batch', batch_id=batch_id))
 
-# === YEASTS ===
-@routes.route('/yeasts')
-def yeasts():
-    return render_template('yeasts.html')
-
 # === Modular Blueprints ===
 from .routes_admin import admin_bp
 from .routes_batches import batches_bp
@@ -102,6 +97,7 @@ from .routes_calendar import calendar_bp
 from .routes_recipes import recipes_bp
 from .routes_settings import settings_bp
 from .routes_stats import stats_bp
+from .routes_yeast import yeast_bp
 
 routes.register_blueprint(admin_bp)
 routes.register_blueprint(batches_bp)
@@ -110,3 +106,4 @@ routes.register_blueprint(calendar_bp)
 routes.register_blueprint(recipes_bp)
 routes.register_blueprint(settings_bp)
 routes.register_blueprint(stats_bp)
+routes.register_blueprint(yeast_bp)

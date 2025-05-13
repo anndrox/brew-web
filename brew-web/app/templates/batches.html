@@ -6,26 +6,31 @@
     ('Mead', mead_batches),
     ('Wine', wine_batches),
     ('Beer', beer_batches),
+    ('Hard Cider', cider_batches),
     ('Other', other_batches)
 ] if group %}
   <h2>
-    {% if type == 'Mead' %}🍯{% elif type == 'Wine' %}🍷{% elif type == 'Beer' %}🍺{% else %}📦{% endif %}
-    {{ type }} Batches
+    {% if type == 'Mead' %}🍯
+	{% elif type == 'Wine' %}🍷
+	{% elif type == 'Beer' %}🍺
+	{% elif type == 'Hard Cider' %}🍎
+	{% else %}📦
+	{% endif %}
   </h2>
 
   <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: sans-serif; margin-top: 1em;">
     <thead>
-      <tr style="background-color: #333; color: #fff;">
-        <th style="padding: 12px; border: 1px solid #444;">Name</th>
-        <th style="padding: 12px; border: 1px solid #444;">Recipe</th>
-        <th style="padding: 12px; border: 1px solid #444;">Start Date</th>
-        <th style="padding: 12px; border: 1px solid #444;">End Date</th>
-        <th style="padding: 12px; border: 1px solid #444;">ABV %</th>
-        <th style="padding: 12px; border: 1px solid #444;">Yeast</th>
-        <th style="padding: 12px; border: 1px solid #444;">Status</th>
-        <th style="padding: 12px; border: 1px solid #444;"></th>
-      </tr>
-    </thead>
+	  <tr style="background-color: #333; color: #fff;">
+		<th style="padding: 12px; border: 1px solid #444;">Name</th>
+		<th style="padding: 12px; border: 1px solid #444;">Recipe</th>
+		<th style="padding: 12px; border: 1px solid #444;">Start Date</th>
+		<th style="padding: 12px; border: 1px solid #444;">End Date</th>
+		<th style="padding: 12px; border: 1px solid #444;">ABV %</th>
+		<th style="padding: 12px; border: 1px solid #444;">Yeast</th>  <!-- ✅ fixed -->
+		<th style="padding: 12px; border: 1px solid #444;">Status</th>
+		<th style="padding: 12px; border: 1px solid #444;"></th>
+	  </tr>
+	</thead>
     <tbody>
       {% for batch in group %}
       <tr style="background-color: {% if loop.index0 % 2 == 0 %}#111{% else %}#1a1a1a{% endif %}; color: #eee;">

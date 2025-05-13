@@ -2,8 +2,8 @@ from . import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from app import db
 
-# --- USER AUTHENTICATION MODEL ---
 class User(db.Model, UserMixin):
 
     id = db.Column(db.Integer, primary_key=True)
@@ -23,19 +23,19 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return f"<User {self.username}>"
 
-# --- EXISTING MODELS BELOW ---
 
 class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    alcohol_type = db.Column(db.String(20))  # "Mead", "Wine", or "Beer"
-    content = db.Column(db.Text)  # Full recipe text
+    alcohol_type = db.Column(db.String(20))
+    content = db.Column(db.Text)
     created_date = db.Column(db.DateTime, default=datetime.utcnow)
     instructions = db.Column(db.Text)
     notes = db.Column(db.Text)
     water_type = db.Column(db.String(50))
+    yeast_id = db.Column(db.Integer, db.ForeignKey('yeast.id'))
+    yeast = db.relationship('Yeast')
 
-    # Relationship: One recipe can have many batches
     batches = db.relationship(
         'Batch',
         backref='recipe',
@@ -64,6 +64,8 @@ class Batch(db.Model):
     tosna_total = db.Column(db.Float, comment="Total Fermaid O needed in grams")
     tosna_per_day = db.Column(db.Float, comment="Fermaid O per day over 4 days")
     tosna_enabled = db.Column(db.Boolean, default=False)
+    yeast_id = db.Column(db.Integer, db.ForeignKey('yeast.id'))
+    yeast = db.relationship('Yeast')
 
     measurements = db.relationship(
         'Measurement',
@@ -89,9 +91,21 @@ class Ingredient(db.Model):
     name = db.Column(db.String(100), nullable=False)
     amount_per_gallon = db.Column(db.Float, nullable=False)
     unit = db.Column(db.String(20), nullable=False)
-    note = db.Column(db.String(200))  # optional
+    note = db.Column(db.String(200))
 
     recipe = db.relationship('Recipe', backref=db.backref('ingredients', cascade='all, delete-orphan'))
+
+class Yeast(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    alcohol_type = db.Column(db.String(20), nullable=False)
+    tolerance = db.Column(db.String(50))
+    strength = db.Column(db.String(50))
+    sweetness_retention = db.Column(db.String(50))
+    notes = db.Column(db.Text)
+    flocculation = db.Column(db.String(50))
+    attenuation = db.Column(db.String(10))
+    is_default = db.Column(db.Boolean, default=False)
 
 class Measurement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
