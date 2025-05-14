@@ -26,7 +26,7 @@
     <option value="">-- Select Yeast --</option>
     {% for yeast in yeasts %}
       <option value="{{ yeast.id }}"
-        {% if recipe and recipe.yeast_id == yeast.id %}selected{% endif %}>
+        {% if batch.yeast_id == yeast.id %}selected{% endif %}>
         {{ yeast.name }} ({{ yeast.alcohol_type }})
       </option>
     {% endfor %}
@@ -48,7 +48,7 @@
     <select id="water_type" name="water_type">
       <option value="">-- Select --</option>
       {% for wt in ['Filtered Tap', 'Spring Water', 'Distilled', 'Well Water', 'Unfiltered Tap'] %}
-        <option value="{{ wt }}" {% if request.form.get('water_type') == wt %}selected{% endif %}>{{ wt }}</option>
+        <option value="{{ wt }}" {% if batch.water_type == wt %}selected{% endif %}>{{ wt }}</option>
       {% endfor %}
     </select><br/><br/>
   <label for="yeast_type">Yeast Notes (Optional):</label><br/>

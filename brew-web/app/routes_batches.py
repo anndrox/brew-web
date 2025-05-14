@@ -26,7 +26,8 @@ def list_batches():
         wine_batches=wine_batches,
         beer_batches=beer_batches,
         cider_batches=cider_batches,
-        other_batches=other_batches
+        other_batches=other_batches,
+        today=datetime.utcnow().date()
     )
 
 @batches_bp.route('/<int:batch_id>')
@@ -55,6 +56,11 @@ def edit_batch(batch_id):
             batch.initial_gravity = round(float(request.form.get('initial_gravity')), 3)
         except (TypeError, ValueError):
             batch.initial_gravity = None
+
+        if initial_gravity and final_gravity:
+            abv = round((initial_gravity - final_gravity) * 131.25, 2)
+        else:
+            abv = None
 
         try:
             batch.final_gravity = round(float(request.form.get('final_gravity')), 3)
@@ -125,7 +131,6 @@ def new_batch():
             flash("Invalid start date format.", "danger")
             return redirect(url_for('routes.batches_bp.new_batch'))
 
-        # Parse and round floats
         try:
             initial_gravity = round(float(request.form.get('initial_gravity')), 3)
         except (TypeError, ValueError):
@@ -140,6 +145,11 @@ def new_batch():
             batch_size = float(request.form.get('batch_size'))
         except (TypeError, ValueError):
             batch_size = None
+
+        if initial_gravity and final_gravity:
+            abv = round((initial_gravity - final_gravity) * 131.25, 2)
+        else:
+            abv = None
 
         try:
             fermentation_temp = float(request.form.get('fermentation_temp'))

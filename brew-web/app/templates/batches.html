@@ -10,11 +10,11 @@
     ('Other', other_batches)
 ] if group %}
   <h2>
-    {% if type == 'Mead' %}🍯
-	{% elif type == 'Wine' %}🍷
-	{% elif type == 'Beer' %}🍺
-	{% elif type == 'Hard Cider' %}🍎
-	{% else %}📦
+    {% if type == 'Mead' %}🍯 Mead
+	{% elif type == 'Wine' %}🍷 Wine
+	{% elif type == 'Beer' %}🍺 Beer
+	{% elif type == 'Hard Cider' %}🍎 Hard Cider
+	{% else %}📦 Other
 	{% endif %}
   </h2>
 
@@ -26,7 +26,7 @@
 		<th style="padding: 12px; border: 1px solid #444;">Start Date</th>
 		<th style="padding: 12px; border: 1px solid #444;">End Date</th>
 		<th style="padding: 12px; border: 1px solid #444;">ABV %</th>
-		<th style="padding: 12px; border: 1px solid #444;">Yeast</th>  <!-- ✅ fixed -->
+		<th style="padding: 12px; border: 1px solid #444;">Yeast</th>
 		<th style="padding: 12px; border: 1px solid #444;">Status</th>
 		<th style="padding: 12px; border: 1px solid #444;"></th>
 	  </tr>
@@ -41,19 +41,26 @@
         <td style="padding: 10px; border: 1px solid #444;">
           {{ batch.start_date.strftime('%Y-%m-%d') if batch.start_date else '—' }}
         </td>
-        <td style="padding: 10px; border: 1px solid #444;">
-          {{ batch.end_date.strftime('%Y-%m-%d') if batch.end_date else '—' }}
+		<td style="padding: 10px; border: 1px solid #444;">
+		{{ batch.end_date.strftime('%Y-%m-%d') if batch.end_date else '—' }}
+
         </td>
         <td style="padding: 10px; border: 1px solid #444;">
 		  {{ batch.abv | round(2) if batch.abv is not none else '—' }}
 		</td>
-        <td style="padding: 10px; border: 1px solid #444;">{{ batch.yeast_type or '—' }}</td>
         <td style="padding: 10px; border: 1px solid #444;">
-          {% if batch.end_date %}
-            <span style="background-color: #008000aa; padding: 4px 8px; border-radius: 6px;">✅ Completed</span>
-          {% else %}
-            <span style="background-color: #ffae00aa; padding: 4px 8px; border-radius: 6px;">🕒 In Progress</span>
-          {% endif %}
+		{% if batch.yeast %}
+			{{ batch.yeast.name }} ({{ batch.yeast.alcohol_type }})
+		{% else %}
+			—
+		{% endif %}
+		</td>
+        <td style="padding: 10px; border: 1px solid #444;">
+		{% if batch.end_date and batch.end_date.date() <= today %}
+		<span style="background-color: #008000aa; padding: 4px 8px; border-radius: 6px;">✅ Completed</span>
+		{% else %}
+		<span style="background-color: #ffae00aa; padding: 4px 8px; border-radius: 6px;">🕒 In Progress</span>
+		{% endif %}
         </td>
         <td style="padding: 10px; border: 1px solid #444;">
           <a href="{{ url_for('routes.batches_bp.view_batch', batch_id=batch.id) }}" style="color: #4eaaff;">View</a>
