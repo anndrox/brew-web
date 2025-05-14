@@ -50,6 +50,7 @@ class Batch(db.Model):
     name = db.Column(db.String(100), nullable=False)
     start_date = db.Column(db.DateTime)
     end_date = db.Column(db.DateTime)
+    batch_size = db.Column(db.Float)
     fermentation_temp = db.Column(db.String(50))
     initial_gravity = db.Column(db.Float)
     final_gravity = db.Column(db.Float)

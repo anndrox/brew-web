@@ -50,8 +50,17 @@ def edit_batch(batch_id):
         batch.start_date = request.form.get('start_date') or None
         batch.end_date = request.form.get('end_date') or None
         batch.batch_size = request.form.get('batch_size') or None
-        batch.initial_gravity = request.form.get('initial_gravity') or None
-        batch.final_gravity = request.form.get('final_gravity') or None
+
+        try:
+            batch.initial_gravity = round(float(request.form.get('initial_gravity')), 3)
+        except (TypeError, ValueError):
+            batch.initial_gravity = None
+
+        try:
+            batch.final_gravity = round(float(request.form.get('final_gravity')), 3)
+        except (TypeError, ValueError):
+            batch.final_gravity = None
+
         batch.fermentation_temp = request.form.get('fermentation_temp') or None
         batch.water_type = request.form.get('water_type') or None
         batch.yeast_type = request.form.get('yeast_type') or None
@@ -116,26 +125,32 @@ def new_batch():
             flash("Invalid start date format.", "danger")
             return redirect(url_for('routes.batches_bp.new_batch'))
 
-        if tosna_enabled:
-            try:
-                batch_size = float(request.form['batch_size'])
-                og = float(request.form['initial_gravity'])
-                if og >= 1.050:
-                    must_liters = batch_size * 3.78541
-                    tosna_total = round(0.8 * must_liters, 2)
-                    tosna_per_day = round(tosna_total / 4, 2)
-            except:
-                flash("Could not calculate TOSNA due to missing or invalid values.", "warning")
-                tosna_enabled = False
+        # Parse and round floats
+        try:
+            initial_gravity = round(float(request.form.get('initial_gravity')), 3)
+        except (TypeError, ValueError):
+            initial_gravity = None
 
         try:
-            batch_size = float(request.form['batch_size'])
-            og = float(request.form['initial_gravity'])
-            if og >= 1.050:
-                must_liters = batch_size * 3.78541
-                tosna_total = round(0.8 * must_liters, 2)
-                tosna_per_day = round(tosna_total / 4, 2)
-        except:
+            final_gravity = round(float(request.form.get('final_gravity')), 3)
+        except (TypeError, ValueError):
+            final_gravity = None
+
+        try:
+            batch_size = float(request.form.get('batch_size'))
+        except (TypeError, ValueError):
+            batch_size = None
+
+        try:
+            fermentation_temp = float(request.form.get('fermentation_temp'))
+        except (TypeError, ValueError):
+            fermentation_temp = None
+
+        if tosna_enabled and batch_size and initial_gravity and initial_gravity >= 1.050:
+            must_liters = batch_size * 3.78541
+            tosna_total = round(0.8 * must_liters, 2)
+            tosna_per_day = round(tosna_total / 4, 2)
+        elif tosna_enabled:
             flash("Could not calculate TOSNA due to missing or invalid values.", "warning")
             tosna_enabled = False
 
@@ -147,7 +162,17 @@ def new_batch():
             yeast_id=request.form.get('yeast_id') or None,
             tosna_enabled=tosna_enabled,
             tosna_total=tosna_total,
-            tosna_per_day=tosna_per_day
+            tosna_per_day=tosna_per_day,
+            initial_gravity=initial_gravity,
+            final_gravity=final_gravity,
+            batch_size=batch_size,
+            fermentation_temp=fermentation_temp,
+            water_type=request.form.get('water_type') or None,
+            yeast_type=request.form.get('yeast_type') or None,
+            backsweetened='backsweetened' in request.form,
+            pectic_used='pectic_used' in request.form,
+            flavor_additions=request.form.get('flavor_additions') or None,
+            notes=request.form.get('notes') or None
         )
 
         db.session.add(batch)
@@ -156,7 +181,6 @@ def new_batch():
         return redirect(url_for('routes.batches_bp.list_batches'))
 
     return render_template('new_batch.html', recipes=recipes, yeasts=yeasts, show_warning=show_warning)
-
     
 ### Calculator additions ###
 

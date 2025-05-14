@@ -16,6 +16,8 @@
   {% endif %}
 </p>
 <p><strong>ABV:</strong> {{ batch.abv|round(2) if batch.abv is not none else 'N/A' }}%</p>
+<p><strong>Original Gravity:</strong> {{ '%.3f' % batch.initial_gravity if batch.initial_gravity else 'N/A' }}</p>
+<p><strong>Final Gravity:</strong> {{ '%.3f' % batch.final_gravity if batch.final_gravity else 'N/A' }}</p>
 <p><strong>Yeast:</strong>
   {% if batch.yeast %}
     {{ batch.yeast.name }} ({{ batch.yeast.alcohol_type }})

@@ -45,10 +45,13 @@
   <input type="number" id="batch_size" name="batch_size" step="0.1" value="{{ request.form.get('batch_size', '') }}"><br/><br/>
 
   <label for="initial_gravity">Original Gravity:</label><br/>
-  <input type="text" id="initial_gravity" name="initial_gravity" value="{{ request.form.get('initial_gravity', '') }}" placeholder="e.g., 1.090" pattern="1\\.\\d{2,3}" required><br/><br/>
+  <input type="text" id="initial_gravity" name="initial_gravity"
+         value="{{ '%.3f' % request.form.get('initial_gravity')|float if request.form.get('initial_gravity') else '' }}"
+         placeholder="e.g., 1.090"><br/><br/>
 
   <label for="final_gravity">Final Gravity:</label><br/>
-  <input type="text" id="final_gravity" name="final_gravity" value="{{ request.form.get('final_gravity', '') }}"><br/><br/>
+  <input type="text" id="final_gravity" name="final_gravity"
+         value="{{ '%.3f' % request.form.get('final_gravity')|float if request.form.get('final_gravity') else '' }}"><br/><br/>
 
   <label for="fermentation_temp">Fermentation Temp (°F):</label><br/>
   <input type="text" id="fermentation_temp" name="fermentation_temp" value="{{ request.form.get('fermentation_temp', '') }}"><br/><br/>

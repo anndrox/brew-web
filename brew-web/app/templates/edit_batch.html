@@ -34,12 +34,12 @@
 
   <label for="batch_size">Batch Size (gallons):</label><br/>
   <input type="number" id="batch_size" name="batch_size" step="0.1" value="{{ batch.batch_size or '' }}"><br/><br/>
-
+  
   <label for="initial_gravity">Original Gravity:</label><br/>
-  <input type="text" id="initial_gravity" name="initial_gravity" value="{{ batch.initial_gravity or '' }}"><br/><br/>
+  <input type="text" id="initial_gravity" name="initial_gravity" value="{{ '%.3f' % batch.initial_gravity if batch.initial_gravity else '' }}"><br/><br/>
 
   <label for="final_gravity">Final Gravity:</label><br/>
-  <input type="text" id="final_gravity" name="final_gravity" value="{{ batch.final_gravity or '' }}"><br/><br/>
+  <input type="text" id="final_gravity" name="final_gravity" value="{{ '%.3f' % batch.final_gravity if batch.final_gravity else '' }}"><br/><br/>
 
   <label for="fermentation_temp">Fermentation Temp (°F):</label><br/>
   <input type="text" id="fermentation_temp" name="fermentation_temp" value="{{ batch.fermentation_temp or '' }}"><br/><br/>
