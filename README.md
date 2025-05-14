@@ -30,8 +30,30 @@ cd brew-web
 
 docker compose up -d --build
 ```
-
 Access the app at: [http://localhost:4452](http://localhost:4452)
+
+!!! IMPORTANT !!!
+If you are importing from a sql backup before version 1.4.0, you will need to perform some additional steps after you import your database.
+This is due to yeasts being store in the table and when importing, it clears the database schema and results with breaking the app.
+
+```docker exec -it brew-web bash
+flask shell
+from app import db
+db.create_all()
+from app.seed_yeasts import seed_yeasts
+seed_yeasts()
+```
+You should return with	✅ Yeast data seeded successfully. Then keep following below.
+```exit()
+psql -h db -U brewuser -d brewweb
+```
+"Password for user brewuser:" Enter brewpass and press ENTER
+```ALTER TABLE recipe ADD COLUMN IF NOT EXISTS yeast_id INTEGER REFERENCES yeast(id);
+\q
+exit
+docker compose build
+docker compose up -d
+```
 
 ---
 
