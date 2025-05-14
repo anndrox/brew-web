@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 import glob
@@ -190,7 +189,6 @@ def import_db():
     file.save(temp_path)
 
     try:
-        # Use bash -c to run both commands in sequence
         subprocess.Popen([
             "bash", "-c",
             f'psql -h db -U brewuser -d brewweb -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" && psql -h db -U brewuser -d brewweb -f "{temp_path}"'

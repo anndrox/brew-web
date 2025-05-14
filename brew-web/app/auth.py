@@ -4,8 +4,33 @@ from flask_login import LoginManager, login_user, logout_user, login_required, U
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from .models import User
+from sqlalchemy import inspect
 
 auth_bp = Blueprint('auth_bp', __name__)
+
+@auth_bp.before_app_request
+def require_setup_or_reset():
+    from flask import request
+
+    # Skip static assets
+    if request.endpoint in ('static',):
+        return
+
+    inspector = inspect(db.engine)
+    if 'user' in inspector.get_table_names():
+        try:
+            # If no user exists yet, redirect to setup
+            if not User.query.first() and request.endpoint != 'auth_bp.setup':
+                return redirect(url_for('auth_bp.setup'))
+        except Exception:
+            pass  # Safeguard against any unexpected DB errors
+
+    # If force_reset.flag is missing, force reset
+    flag_path = os.path.join(current_app.instance_path, 'force_reset.flag')
+    if not os.path.exists(flag_path):
+        allowed_endpoints = ['auth_bp.reset_password', 'auth_bp.login', 'auth_bp.setup', 'static']
+        if request.endpoint not in allowed_endpoints:
+            return redirect(url_for('auth_bp.reset_password'))
 
 @auth_bp.before_app_request
 def require_setup_or_reset():
