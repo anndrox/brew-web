@@ -53,19 +53,23 @@ def edit_batch(batch_id):
         batch.batch_size = request.form.get('batch_size') or None
 
         try:
-            batch.initial_gravity = round(float(request.form.get('initial_gravity')), 3)
+            initial_gravity = round(float(request.form.get('initial_gravity')), 3)
         except (TypeError, ValueError):
-            batch.initial_gravity = None
+            initial_gravity = None
 
-        if initial_gravity and final_gravity:
+        try:
+            final_gravity = round(float(request.form.get('final_gravity')), 3)
+        except (TypeError, ValueError):
+            final_gravity = None
+
+        if initial_gravity is not None and final_gravity is not None:
             abv = round((initial_gravity - final_gravity) * 131.25, 2)
         else:
             abv = None
 
-        try:
-            batch.final_gravity = round(float(request.form.get('final_gravity')), 3)
-        except (TypeError, ValueError):
-            batch.final_gravity = None
+        batch.initial_gravity = initial_gravity
+        batch.final_gravity = final_gravity
+        batch.abv = abv
 
         batch.fermentation_temp = request.form.get('fermentation_temp') or None
         batch.water_type = request.form.get('water_type') or None
