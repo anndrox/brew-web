@@ -1,0 +1,10 @@
+### Adding
+- When adding readings(pH and FG) add notes page for observations (taste, visual quality, ect)
+
+
+### Improving
+- Text readability of the site in general. When reading recipes, it does tend to blend together.
+
+
+### Fixing
+
