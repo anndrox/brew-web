@@ -33,6 +33,8 @@ cd brew-web
 # create .env from template and set SECRET_KEY
 cp .env.example .env
 $EDITOR .env   # set SECRET_KEY to a non-empty value
+or
+nano .env
 
 docker compose up -d --build
 ```
