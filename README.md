@@ -1,6 +1,6 @@
 # Brew-Web 🍯
 
-[![Version](https://img.shields.io/badge/version-v1.3.0-blue)](#)
+[![Version](https://img.shields.io/badge/version-v1.4.0-blue)](#)
 [![Docker](https://img.shields.io/badge/built%20with-Docker-blue)](#)
 [![Flask](https://img.shields.io/badge/framework-Flask-yellow)](#)
 [![License](https://img.shields.io/badge/license-MIT-green)](#)
@@ -18,44 +18,27 @@ A self-hosted web app to manage mead brewing recipes, batches, and calculators �
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/)
+- A `.env` file in the project root (copy `.env.example`) with `SECRET_KEY` set to a non-empty value.
+- For local/test you can set `SECRET_KEY=test-key`; for production use a long random value.
 
 ### Installation
 
 ```bash
-wget https://github.com/anndrox/brew-web/raw/main/brew-web-1.3.0.zip
+wget https://github.com/anndrox/brew-web/raw/main/brew-web-1.4.0.zip
 
-unzip brew-web-1.3.0.zip -d .
+unzip brew-web-1.4.0.zip -d .
 
 cd brew-web
+
+# create .env from template and set SECRET_KEY
+cp .env.example .env
+$EDITOR .env   # set SECRET_KEY to a non-empty value
 
 docker compose up -d --build
 ```
 Access the app at: [http://localhost:4452](http://localhost:4452)
 
-!!! IMPORTANT !!!
-If you are importing from a sql backup before version 1.4.0, you will need to perform some additional steps after you import your database.
-This is due to yeasts being store in the table and when importing, it clears the database schema and results with breaking the app.
-
-```docker exec -it brew-web bash
-flask shell
-from app import db
-db.create_all()
-from app.seed_yeasts import seed_yeasts
-seed_yeasts()
-```
-You should return with	✅ Yeast data seeded successfully. Then keep following below.
-```exit()
-psql -h db -U brewuser -d brewweb
-```
-"Password for user brewuser:" Enter brewpass and press ENTER
-```ALTER TABLE recipe ADD COLUMN IF NOT EXISTS yeast_id INTEGER REFERENCES yeast(id);
-\q
-exit
-docker compose build
-docker compose up -d
-```
-
----
+> Imports from older backups now run schema repairs and yeast seeding automatically; no manual steps needed.
 
 ## 🔐 Authentication & Security
 
@@ -67,7 +50,9 @@ docker compose up -d
   ```
   /instance/force_reset.flag
   ```
-- For public deployments, use a reverse proxy with SSL (e.g. NGINX + Let's Encrypt)
+- Keep the app behind your TLS proxy; do not expose port 4452 publicly.
+- Store secrets only in `.env` (`SECRET_KEY`, DB creds). Rotate `SECRET_KEY` before production use.
+- Login rate limiting and CSRF are enabled; keep them on.
 
 ---
 
@@ -96,7 +81,8 @@ docker compose up -d
 
 - **Import:**  
   Upload `.sql` via `/admin`  
-  ⏳ Import runs in the background with countdown and refresh
+  ⏳ Import runs in the background with a status page.
+  If restoring older backups, schema fixes (columns/constraints) are applied automatically. If the dump references unknown Alembic revisions, the importer will still complete and patch required tables/columns.
 
 - Safe for `docker compose down -v && up --build` cycles
 
@@ -158,6 +144,7 @@ brew-web/
 - Tables are automatically dropped and reloaded on import via `subprocess.Popen()`
 - Alembic is automatically skipped after full restores
 - Countdown refresh prevents white screen crash during restore
+- Recent maintenance and import hardening provided with assistance from Codex.
 
 ---
 
@@ -173,4 +160,3 @@ MIT © 2025 Scott Jones
 ![2025-05-10 11_21_05-Brew Log](https://github.com/user-attachments/assets/e1bc6fc8-35dd-4929-ab87-74314be23f1e)
 ![2025-05-10 11_21_22-Brew Log](https://github.com/user-attachments/assets/77b513a0-a965-4c65-9064-ad0755befc0b)
 ![2025-05-10 11_21_34-Brew Log](https://github.com/user-attachments/assets/a6cf1218-d004-42dd-b83d-40aab4b24e34)
-
