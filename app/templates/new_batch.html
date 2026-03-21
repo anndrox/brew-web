@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if show_warning %}
+  <div class="banner" style="max-width: 600px; margin: 60px auto; text-align: center;">
+    <h2>🚫 No Recipes Found</h2>
+    <p>You must create at least one recipe before starting a new batch.</p>
+    <p><a class="btn btn-primary" href="{{ url_for('routes.recipes_bp.new_recipe') }}">➕ Add a Recipe</a></p>
+  </div>
+{% endif %}
+
+<h1>New Batch</h1>
+
+<form method="POST">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+  <label for="name">Batch Name:</label><br/>
+  <input type="text" id="name" name="name" value="{{ request.form.get('name', '') }}" required><br/><br/>
+
+  <label for="start_date">Start Date:</label><br/>
+  <input type="date" id="start_date" name="start_date" value="{{ request.form.get('start_date', '') }}" required><br/><br/>
+
+  <label for="end_date">End Date:</label><br/>
+  <input type="date" id="end_date" name="end_date" value="{{ request.form.get('end_date', '') }}"><br/><br/>
+
+  <label for="recipe_id">Recipe:</label><br/>
+  <select id="recipe_id" name="recipe_id" required>
+    {% for r in recipes %}
+      <option value="{{ r.id }}" {% if request.form.get('recipe_id') == r.id|string %}selected{% endif %}>{{ r.name }}</option>
+    {% endfor %}
+  </select><br/><br/>
+
+  <label for="yeast_id">Yeast Type:</label><br/>
+  <select id="yeast_id" name="yeast_id">
+    <option value="">-- Select Yeast --</option>
+    {% for yeast in yeasts %}
+      <option value="{{ yeast.id }}"
+        {% if request.form.get('yeast_id')|int == yeast.id %}selected{% endif %}>
+        {{ yeast.name }} ({{ yeast.alcohol_type }})
+      </option>
+    {% endfor %}
+  </select><br/><br/>
+
+  <label for="batch_size">Batch Size ({{ 'liters' if unit_preference == 'metric' else 'gallons' }}):</label><br/>
+  <input type="number" id="batch_size" name="batch_size" step="0.1" value="{{ request.form.get('batch_size', '') }}"><br/><br/>
+
+  <label for="initial_gravity">Original Gravity:</label><br/>
+  <input type="text" id="initial_gravity" name="initial_gravity"
+         value="{{ '%.3f' % request.form.get('initial_gravity')|float if request.form.get('initial_gravity') else '' }}"
+         placeholder="e.g., 1.090"><br/><br/>
+
+  <label for="final_gravity">Final Gravity:</label><br/>
+  <input type="text" id="final_gravity" name="final_gravity"
+         value="{{ '%.3f' % request.form.get('final_gravity')|float if request.form.get('final_gravity') else '' }}"><br/><br/>
+
+  <label for="fermentation_temp">Fermentation Temp ({{ '°C' if unit_preference == 'metric' else '°F' }}):</label><br/>
+  <input type="text" id="fermentation_temp" name="fermentation_temp" value="{{ request.form.get('fermentation_temp', '') }}"><br/><br/>
+
+  <label for="water_type">Water Type:</label><br/>
+  <select id="water_type" name="water_type">
+    <option value="">-- Select --</option>
+    {% for wt in ['Filtered Tap', 'Spring Water', 'Distilled', 'Well Water', 'Unfiltered Tap'] %}
+      <option value="{{ wt }}" {% if request.form.get('water_type') == wt %}selected{% endif %}>{{ wt }}</option>
+    {% endfor %}
+  </select><br/><br/>
+
+  <label for="yeast_type">Yeast Notes (Optional):</label><br/>
+  <input type="text" id="yeast_type" name="yeast_type" value="{{ request.form.get('yeast_type', '') }}"><br/><br/>
+
+  <label><input type="checkbox" name="enable_tosna" {% if request.form.get('enable_tosna') %}checked{% endif %}> Enable TOSNA</label><br/><br/>
+
+  <label><input type="checkbox" name="backsweetened" {% if request.form.get('backsweetened') %}checked{% endif %}> Backsweetened</label><br/><br/>
+
+  <label><input type="checkbox" name="pectic_used" {% if request.form.get('pectic_used') %}checked{% endif %}> Pectic Enzyme Used</label><br/><br/>
+
+  <label for="flavor_additions">Flavor Additions:</label><br/>
+  <textarea id="flavor_additions" name="flavor_additions" rows="3" cols="50">{{ request.form.get('flavor_additions', '') }}</textarea><br/><br/>
+
+  <label for="notes">Notes:</label><br/>
+  <textarea id="notes" name="notes" rows="4" cols="50">{{ request.form.get('notes', '') }}</textarea><br/><br/>
+
+  <button type="submit">Create Batch</button>
+</form>
+
+<a href="{{ url_for('routes.index') }}">Cancel</a>
+
+{% endblock %}

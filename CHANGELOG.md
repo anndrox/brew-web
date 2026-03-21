@@ -1,5 +1,22 @@
 # Brew-Web Changelog
 
+## [v1.4.0] - 2026-03-21
+### Added
+- Added flocculation and attenuation fields to yeast model
+
+### Maintenance (2026-03-21)
+- Added global unit preference (imperial/metric) with admin setting; converted batch/forms/calculators to honor it.
+- Hardened imports: background import now runs schema repairs (tables/columns), seed, and status polling page.
+- Added import status page with auto-refresh and clear button.
+- Entry startup now waits for DB, auto-creates database, and guards required columns.
+- Updated README for `.env`/SECRET_KEY requirements and private deploy notes.
+- `.gitignore` expanded (backups, logs, env, caches) and packaged zip excludes ignored files.
+- Fixed password-reset redirect loop (force_reset handling) so first-time setup lands correctly.
+- Expanded default yeast seed list (multi-type support)
+- Locked default yeasts from deletion/editing
+- Updated new/edit batch forms to reflect full yeast and recipe data
+- Improved yeast selection consistency and validation
+
 ## [v1.3.1] - 2025-05-10
 ### Added
 - TONSA additions to current batches and suggested feeding schedule and the ability to add it to the calendar

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Edit Recipe</h1>
+
+<!-- Quill CSS -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+<form method="POST">
+  <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+
+  <label for="name">Name:</label><br/>
+  <input id="name" name="name" value="{{ recipe.name }}" required/><br/><br/>
+
+  <label for="alcohol_type">Alcohol Type:</label><br/>
+  <select id="alcohol_type" name="alcohol_type" required>
+    <option value="">-- Select --</option>
+    <option value="Mead" {% if recipe.alcohol_type == "Mead" %}selected{% endif %}>Mead</option>
+    <option value="Wine" {% if recipe.alcohol_type == "Wine" %}selected{% endif %}>Wine</option>
+    <option value="Beer" {% if recipe.alcohol_type == "Beer" %}selected{% endif %}>Beer</option>
+	<option value="Hard Cider" {% if recipe.alcohol_type == "Hard Cider" %}selected{% endif %}>Hard Cider</option>
+	
+  </select><br/><br/>
+
+  <label for="yeast_id">Yeast Type:</label>
+  <select id="yeast_id" name="yeast_id">
+    <option value="">-- Select Yeast --</option>
+    {% for yeast in yeasts %}
+      <option value="{{ yeast.id }}"
+        {% if recipe and recipe.yeast_id == yeast.id %}selected{% endif %}>
+        {{ yeast.name }} ({{ yeast.alcohol_type }})
+      </option>
+    {% endfor %}
+  </select><br/><br/>
+
+  <label for="content">Instructions:</label><br/>
+  <div id="quill-editor" style="height: 200px; background-color: white;"></div>
+  <input type="hidden" name="content" id="content"><br/><br/>
+
+  <h3>Ingredients (per {{ 'liter' if unit_preference == 'metric' else 'gallon' }})</h3>
+  <div id="ingredient-container">
+    {% for ingredient in recipe.ingredients %}
+      {% set i = loop.index0 %}
+      <div class="ingredient-row" style="margin-bottom: 10px;">
+        <input name="ingredient_name_{{ i }}" placeholder="Name" type="text" value="{{ ingredient.name }}"/>
+        <input name="ingredient_amount_{{ i }}" placeholder="Amount" step="0.01" type="number" value="{{ gallons_to_liters(ingredient.amount_per_gallon) if unit_preference == 'metric' else ingredient.amount_per_gallon }}"/>
+        <input name="ingredient_unit_{{ i }}" placeholder="Unit" type="text" value="{{ ingredient.unit }}"/>
+        <input name="ingredient_note_{{ i }}" placeholder="Note (optional)" type="text" value="{{ ingredient.note }}"/>
+        <button onclick="confirmRemove(this)" type="button">❌</button>
+      </div>
+    {% endfor %}
+  </div>
+
+  <button onclick="addIngredient()" type="button">➕ Add Ingredient</button><br/><br/>
+
+  <label for="water_type">Water Type:</label><br/>
+  <select id="water_type" name="water_type">
+    <option value="">-- Select --</option>
+    <option value="Filtered Tap" {% if recipe.water_type == "Filtered Tap" %}selected{% endif %}>Filtered Tap</option>
+    <option value="Spring Water" {% if recipe.water_type == "Spring Water" %}selected{% endif %}>Spring Water</option>
+    <option value="Distilled" {% if recipe.water_type == "Distilled" %}selected{% endif %}>Distilled</option>
+    <option value="Well Water" {% if recipe.water_type == "Well Water" %}selected{% endif %}>Well Water</option>
+    <option value="Unfiltered Tap" {% if recipe.water_type == "Unfiltered Tap" %}selected{% endif %}>Unfiltered Tap</option>
+  </select><br/><br/>
+
+  <button type="submit">💾 Save Changes</button>
+</form>
+
+<p>
+  <a href="{{ url_for('routes.recipes_bp.view_recipe', recipe_id=recipe.id) }}">↩ Back to Recipe</a>
+</p>
+
+<!-- Quill JS -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<script>
+  const quill = new Quill('#quill-editor', {
+    theme: 'snow',
+    placeholder: 'Write your instruction steps here...',
+    modules: {
+      toolbar: [
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ 'align': [] }],
+        ['link'],
+        ['clean']
+      ]
+    }
+  });
+
+  // Set initial content from server
+  const existingInstructions = `{{ recipe.content | safe }}`;
+  quill.root.innerHTML = existingInstructions;
+
+  // Copy HTML to hidden input on submit
+  document.querySelector('form').addEventListener('submit', function () {
+    document.getElementById('content').value = quill.root.innerHTML;
+  });
+
+  let ingredientIndex = {{ recipe.ingredients|length }};
+  function addIngredient() {
+    const container = document.getElementById('ingredient-container');
+    const div = document.createElement('div');
+    div.className = 'ingredient-row';
+    div.style.marginBottom = '10px';
+    div.innerHTML = `
+      <input type="text" name="ingredient_name_${ingredientIndex}" placeholder="Name" required>
+      <input type="number" step="0.01" name="ingredient_amount_${ingredientIndex}" placeholder="Amount" required>
+      <input type="text" name="ingredient_unit_${ingredientIndex}" placeholder="Unit" required>
+      <input type="text" name="ingredient_note_${ingredientIndex}" placeholder="Note (optional)">
+      <button type="button" onclick="confirmRemove(this)">❌</button>
+    `;
+    container.appendChild(div);
+    ingredientIndex++;
+  }
+
+  function confirmRemove(button) {
+    if (confirm("Remove this ingredient?")) {
+      button.parentElement.remove();
+    }
+  }
+</script>
+{% endblock %}

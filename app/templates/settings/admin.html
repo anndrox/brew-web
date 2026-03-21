@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Administration</h1>
+
+{% if update_info.update_available %}
+  <div style="color: orange;">
+    🔔 New version available: <strong>{{ update_info.latest }}</strong><br/>
+    You are running: {{ update_info.current }}
+  </div>
+{% elif update_info.current > update_info.latest %}
+  <div style="color: blue;">
+    🚧 You are running a <strong>Development Build</strong> ({{ update_info.current }})<br/>
+    Latest stable release: {{ update_info.latest }}
+  </div>
+{% else %}
+  <div style="color: green;">
+    ✅ You are running the latest version ({{ update_info.current }})
+  </div>
+{% endif %}
+
+{% if import_status %}
+  <div import-status style="margin: 12px 0; padding: 10px; border-left: 4px solid {% if import_status.status == 'success' %}#28a745{% elif import_status.status == 'running' %}#ffc107{% else %}#dc3545{% endif %}; background: #111;">
+    <strong>Import status:</strong> {{ import_status.message }}
+    {% if import_status.updated_at %}<br/><small>Updated: {{ import_status.updated_at }}</small>{% endif %}
+    {% if import_status.status in ['success', 'error'] %}
+      <form action="{{ url_for('routes.admin_bp.clear_import_status') }}" method="post" style="margin-top:8px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Clear status</button>
+      </form>
+    {% endif %}
+  </div>
+{% endif %}
+
+<h2>Users</h2>
+<table>
+  <tr>
+    <th>Username</th>
+    <th>Role</th>
+    <th>Actions</th>
+  </tr>
+  {% for user in users %}
+  <tr>
+    <td>{{ user.username }}</td>
+    <td>{{ user.role }}</td>
+    <td>
+      <form action="{{ url_for('routes.admin_bp.delete_user', user_id=user.id) }}" method="post" style="display:inline;">
+        <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+        <button type="submit">🗑️ Delete</button>
+      </form>
+      <form action="{{ url_for('routes.admin_bp.update_password', user_id=user.id) }}" method="post" style="display:inline;">
+        <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+        <input name="password" placeholder="New Password" required>
+        <button type="submit">🔒 Reset Password</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h3>Create New User</h3>
+<form action="{{ url_for('routes.admin_bp.create_user') }}" method="post">
+  <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+  <input name="username" placeholder="Username" required>
+  <input name="password" type="password" placeholder="Password" required>
+  <select name="role" required>
+    <option value="">-- Role --</option>
+    <option value="admin">Admin</option>
+    <option value="editor">Editor</option>
+    <option value="viewer">Viewer</option>
+  </select>
+  <button type="submit">➕ Add User</button>
+</form>
+
+<hr>
+<h2>App Settings</h2>
+<form action="{{ url_for('routes.admin_bp.update_base_url') }}" method="post">
+  <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+  <label>Base URL:</label>
+  <input name="base_url" value="{{ settings.base_url or '' }}" placeholder="https://example.com">
+  <br/><br/>
+  <label>Default Units:</label>
+  <select name="unit_preference">
+    <option value="imperial" {% if settings.unit_preference != 'metric' %}selected{% endif %}>Imperial (gallons, °F)</option>
+    <option value="metric" {% if settings.unit_preference == 'metric' %}selected{% endif %}>Metric (liters, °C)</option>
+  </select>
+  <button type="submit">💾 Save</button>
+</form>
+
+<hr>
+<h2>Database Backups</h2>
+
+<form action="{{ url_for('routes.admin_bp.create_backup') }}" method="post" style="margin-bottom: 1em;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit">🆕 Create New Backup</button>
+</form>
+
+{% if backups %}
+<table>
+  <tr>
+    <th>Filename</th>
+    <th>Actions</th>
+  </tr>
+  {% for backup in backups %}
+  <tr>
+    <td>{{ backup }}</td>
+    <td>
+      <a href="{{ url_for('routes.admin_bp.download_backup', filename=backup) }}">⬇️ Download</a>
+      <form action="{{ url_for('routes.admin_bp.delete_backup', filename=backup) }}" method="post" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" onclick="return confirm('Delete this backup?');">🗑️ Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No backups found.</p>
+{% endif %}
+
+<hr>
+<h3>Import SQL Backup</h3>
+<form id="importForm" action="{{ url_for('routes.admin_bp.import_db') }}" method="post" enctype="multipart/form-data"
+      onsubmit="return confirm('⚠️ This will overwrite all data. Continue?');">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="backup_file">📤 Import Database (.sql):</label>
+  <input type="file" name="backup_file" required>
+  <button type="submit">Upload</button>
+</form>
+
+<script>
+  // Auto-refresh import status every 5 seconds while running
+  (function () {
+    const statusBox = document.querySelector('[import-status]');
+    const refreshMs = 5000;
+    if (!statusBox) return;
+
+    async function poll() {
+      try {
+        const resp = await fetch('{{ url_for("routes.admin_bp.import_status") }}', { headers: { 'Accept': 'application/json' }});
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (!data || !data.status) return;
+        statusBox.textContent = `Import status: ${data.message}`;
+        const isRunning = data.status === 'running';
+        if (isRunning) {
+          setTimeout(poll, refreshMs);
+        }
+      } catch (e) {
+        // fail silent
+      }
+    }
+
+    if (statusBox.textContent.toLowerCase().includes('running') || statusBox.textContent.includes('Dropping') || statusBox.textContent.includes('Importing') || statusBox.textContent.includes('Applying') || statusBox.textContent.includes('Seeding')) {
+      setTimeout(poll, refreshMs);
+    }
+  })();
+</script>
+
+<script>
+  document.getElementById("importForm").addEventListener("submit", function () {
+    document.getElementById("importCountdownBox").style.display = "block";
+
+    let countdown = 30;
+    const timerEl = document.getElementById("countdown");
+
+    const interval = setInterval(function () {
+      countdown--;
+      timerEl.textContent = countdown;
+      if (countdown <= 0) {
+        clearInterval(interval);
+        location.reload();
+      }
+    }, 1000);
+  });
+</script>
+
+{% endblock %}

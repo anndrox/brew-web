@@ -1,0 +1,28 @@
+# Flask instance directory (runtime files, secrets, etc.)
+instance/
+
+# Local backups and bundles
+backups/
+brew-web.zip
+
+# Environment and secrets
+.env
+.env.*
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+.coverage.*
+
+# Editors/OS
+.vscode/
+.idea/
+.DS_Store
+
+# Logs and runtime output
+logs/
+*.log

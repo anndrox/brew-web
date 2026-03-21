@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>New Measurement</h1>
+<form method="POST"><input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+  Batch:
+  <select name="batch_id">
+    {% for b in batches %}
+    <option value="{{ b.id }}" {% if b.id == selected_id %}selected{% endif %}>{{ b.name }}</option>
+    {% endfor %}
+  </select><br/>
+  Date: <input name="date" type="date"/><br/>
+  Gravity: <input name="gravity"/><br/>
+  pH: <input name="ph"/><br/>
+  Temperature ({{ '°C' if unit_preference == 'metric' else '°F' }}): <input name="temperature"/><br/>
+  Notes:<br/><textarea name="notes"></textarea><br/>
+<button type="submit">Add Measurement</button>
+</form>
+<a href="{{ url_for('routes.recipes_bp.index') }}">Cancel</a>
+{% endblock %}
