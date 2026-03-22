@@ -64,12 +64,13 @@ Access the app at: [http://localhost:4452](http://localhost:4452)
 - ✅ Recipe scaling with structured ingredients
 - ✅ Batch logging with gravities, honey, and notes
 - ✅ Built-in brewing calculators:
-  - ABV, TOSNA, dilution, sweetness, carbonation, temp correction, volume recovery
+  - ABV, **Target ABV** (honey to reach desired ABV), TOSNA, dilution, sweetness, carbonation, temp correction, volume recovery, honey required
 - ✅ Yeast reference guide with visuals and ratings
 - ✅ Batch calendar tracker
 - ✅ Role-based admin management
 - ✅ Full PostgreSQL backup & restore
 - ✅ Settings: theme, font, security
+- ✅ Global unit preference (imperial/metric) with admin toggle; recipes, forms, and calculators follow your choice
 
 ---
 
@@ -84,6 +85,7 @@ Access the app at: [http://localhost:4452](http://localhost:4452)
   Upload `.sql` via `/admin`  
   ⏳ Import runs in the background with a status page.
   If restoring older backups, schema fixes (columns/constraints) are applied automatically. If the dump references unknown Alembic revisions, the importer will still complete and patch required tables/columns.
+  - **Always take a backup before upgrading.** Use the Export button first so you can roll back if an import doesn’t behave as expected.
 
 - Safe for `docker compose down -v && up --build` cycles
 
