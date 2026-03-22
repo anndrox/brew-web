@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Edit Yeast: {{ yeast.name }}</h1>
+<form method="POST">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Name:</label><br/>
+  <input name="name" value="{{ yeast.name }}" required><br/>
+
+  <label>Alcohol Type:</label><br/>
+  <select name="alcohol_type">
+    {% for type in ["Mead", "Wine", "Beer", "Hard Cider", "Other"] %}
+      <option value="{{ type }}" {% if yeast.alcohol_type == type %}selected{% endif %}>{{ type }}</option>
+    {% endfor %}
+  </select><br/>
+
+  <label>Alcohol Tolerance:</label><br/>
+  <input name="tolerance" value="{{ yeast.tolerance }}"><br/>
+
+  <label>Fermentation Strength:</label><br/>
+  <input name="strength" value="{{ yeast.strength }}"><br/>
+
+  <label>Sweetness Retention:</label><br/>
+  <input name="sweetness_retention" value="{{ yeast.sweetness_retention }}"><br/>
+  
+  <label>Flocculation:</label><br/>
+  <input name="flocculation" value="{{ yeast.flocculation }}"><br/>
+
+  <label>Attenuation (%):</label><br/>
+  <input name="attenuation" value="{{ yeast.attenuation }}"><br/>
+
+  <label>Notes:</label><br/>
+  <textarea name="notes">{{ yeast.notes }}</textarea><br/><br/>
+
+  <button type="submit">💾 Save Changes</button>
+</form>
+<a href="{{ url_for('routes.yeast_bp.list_yeasts') }}">↩ Back</a>
+{% endblock %}

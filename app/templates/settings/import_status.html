@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Import Status</h1>
+<div id="status-box" style="margin:12px 0;padding:12px;border-left:4px solid {% if import_status.status == 'success' %}#28a745{% elif import_status.status == 'error' %}#dc3545{% else %}#ffc107{% endif %};background:#111;">
+  <strong>Status:</strong> {{ import_status.message }}<br/>
+  {% if import_status.updated_at %}<small>Updated: {{ import_status.updated_at }}</small>{% endif %}
+</div>
+<p id="note">This page refreshes automatically while the import runs.</p>
+<p><a href="{{ url_for('routes.admin_bp.admin_settings') }}">Back to Administration</a></p>
+
+<script>
+  (function() {
+    const box = document.getElementById('status-box');
+    const refreshMs = 5000;
+    async function poll() {
+      try {
+        const resp = await fetch('{{ url_for("routes.admin_bp.import_status") }}', { headers: { 'Accept': 'application/json' }});
+        if (!resp.ok) return;
+        const data = await resp.json();
+        box.innerHTML = `<strong>Status:</strong> ${data.message}`;
+        if (data.status === 'running') {
+          setTimeout(poll, refreshMs);
+        }
+      } catch (e) {
+        // ignore errors
+      }
+    }
+    setTimeout(poll, refreshMs);
+  })();
+</script>
+{% endblock %}

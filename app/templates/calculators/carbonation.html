@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Carbonation Calculator</h1>
+
+<p>Calculate the amount of priming sugar needed to carbonate your mead based on target CO₂ volumes.</p>
+
+<form method="POST">
+  <label for="volume">Batch Volume ({{ 'liters' if unit_preference == 'metric' else 'gallons' }}):</label><br>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <input type="number" name="volume" step="0.1" required><br><br>
+
+  <label for="target_co2">Target CO₂ Volumes (e.g. 2.5):</label><br>
+  <input type="number" name="target_co2" step="0.1" required><br><br>
+
+  <button type="submit">Calculate</button>
+</form>
+
+{% if result is not none %}
+  <h3>Result:</h3>
+  {% if result == "Invalid input" %}
+    <p style="color:red;">Please enter valid numeric values.</p>
+  {% else %}
+    <p>Use approximately <strong>{{ result.amount }} {{ result.unit }}</strong> of corn sugar (dextrose).</p>
+  {% endif %}
+{% endif %}
+
+<a href="{{ url_for('routes.calculator_bp.calculator_index') }}">← Back to Calculators</a>
+{% endblock %}

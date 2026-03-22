@@ -1,0 +1,132 @@
+
+body {
+    margin: 0;
+    font-family: 'Georgia', serif;
+    background-color: #111;
+    color: #f4e8c1;
+    font-size: 16px;
+}
+
+a {
+    color: #ffd700;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+.sidebar {
+    width: 160px;
+    background-color: #2e1f13;
+    padding: 20px;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.7);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100vh;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar ul li {
+    margin-bottom: 15px;
+}
+
+.main-content {
+    flex: 1;
+    padding: 20px;
+    overflow-x: auto;
+}
+
+/* layout wrapper for sidebar + main */
+.page-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.banner {
+    background: linear-gradient(to right, #5b3a1a, #a77c3b);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #fff8dc;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.banner h1 {
+    margin: 0;
+    font-size: 2em;
+    font-variant: small-caps;
+    letter-spacing: 1px;
+}
+
+.light-mode {
+    background-color: #fff;
+    color: #111;
+}
+.light-mode .sidebar {
+    background-color: #f5f5f5;
+    color: #111;
+}
+.light-mode .banner {
+    background: linear-gradient(to right, #ffda9e, #f7e7cc);
+    color: #222;
+}
+.light-mode a:visited {
+    color: #444 !important;
+}
+.dark-mode a:visited {
+    color: #aaa !important;
+}
+
+/* Yeast table row color overrides */
+/* Dark mode Quill editor tweaks */
+body.dark-mode .ql-toolbar {
+  background-color: #2e1f13 !important;
+  border-color: #444 !important;
+  color: #f4e8c1 !important;
+}
+
+body.dark-mode .ql-toolbar button svg {
+  fill: #f4e8c1 !important;
+}
+
+body.dark-mode .ql-toolbar .ql-picker-label,
+body.dark-mode .ql-toolbar .ql-picker-item {
+  color: #f4e8c1 !important;
+}
+
+body.dark-mode .ql-container {
+  border-color: #444 !important;
+}
+
+body.dark-mode .ql-editor {
+  background-color: #1e1e1e !important;
+  color: #f4e8c1 !important;
+}
+
+body.dark-mode .ql-editor::before {
+  color: #aaa !important;
+  font-style: italic;
+}
+
+.dark-mode .yeast-row.even {
+    background-color: #111;
+    color: #eee;
+}
+.dark-mode .yeast-row.odd {
+    background-color: #1a1a1a;
+    color: #eee;
+}
+.light-mode .yeast-row.even {
+    background-color: #dfdfdf;
+    color: #111;
+}
+.light-mode .yeast-row.odd {
+    background-color: #f3f3f3;
+    color: #111;
+}

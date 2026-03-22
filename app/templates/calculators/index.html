@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% set body_class = "calculators-page" %}
+{% block content %}
+<h1>Brewing Calculators</h1>
+<p>Select a calculator below to help fine-tune your mead brewing process.</p>
+
+<ul>
+  <li>
+    <a href="{{ url_for('calculator_bp.calculator_volume_recovery') }}">Volume Recovery</a><br>
+    <small>Restore lost mead volume while maintaining your original gravity by calculating how much honey and water to add.</small>
+  </li>
+  <li>
+    <a href="{{ url_for('calculator_bp.calculator_abv') }}">ABV Calculator</a><br>
+    <small>Estimate the alcohol content of your mead based on starting and final gravity readings.</small>
+  </li>
+  <li>
+    <a href="{{ url_for('calculator_bp.calculator_sweetness') }}">Sweetness Targeting</a><br>
+    <small>Calculate how much honey to add to reach a specific final gravity for backsweetening.</small>
+  </li>
+  <li>
+    <a href="{{ url_for('calculator_bp.calculator_dilution') }}">Dilution Calculator</a><br>
+    <small>Reduce your mead's gravity by adding water to reach a lower target SG.</small>
+  </li>
+  <li>
+    <a href="{{ url_for('calculator_bp.calculator_abv_target') }}">Target ABV</a><br>
+    <small>See how much honey to add to hit a desired ABV based on your current gravity.</small>
+  </li>
+  <li>
+    <a href="{{ url_for('calculator_bp.calculator_honey_needed') }}">Honey Required</a><br>
+    <small>Find out how much honey is needed to reach a target starting gravity based on your batch volume.</small>
+  </li>
+  <li>
+    <a href="{{ url_for('calculator_bp.calculator_carbonation') }}">Carbonation Calculator</a><br>
+    <small>Determine how much priming sugar is needed to carbonate your mead to a specific CO₂ level.</small>
+  </li>
+  <li>
+    <a href="{{ url_for('calculator_bp.calculator_tosna') }}">TOSNA Calculator</a><br>
+    <small>Get a schedule for Fermaid O additions using the TOSNA protocol based on volume and OG.</small>
+  </li>
+  <li>
+    <a href="{{ url_for('calculator_bp.calculator_temp_correction') }}">Hydrometer Temp Correction</a><br>
+    <small>Adjust your hydrometer readings based on sample temperature and calibration temperature.</small>
+  </li>
+</ul>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>TOSNA Nutrient Calculator</h1>
+<form method="POST">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+  <label for="batch_size">Batch Size ({{ 'liters' if unit_preference == 'metric' else 'gallons' }}):</label>
+  <input name="batch_size" type="number" step="0.01" required><br/>
+
+  <label for="starting_gravity">Starting Gravity (OG):</label>
+  <input name="starting_gravity" type="number" step="0.001" required><br/>
+
+  <button type="submit">Calculate</button>
+</form>
+
+{% if result %}
+  {% if result is string %}
+    <p>{{ result }}</p>
+  {% else %}
+    {% set total_tsp = result.total / 1.25 %}
+    {% set total_tbsp = total_tsp / 3 %}
+    {% set total_ml = total_tsp * 5 %}
+    {% set per_day_tsp = result.per_day / 1.25 %}
+    {% set per_day_tbsp = per_day_tsp / 3 %}
+    {% set per_day_ml = per_day_tsp * 5 %}
+
+    <h4>Total Fermaid O Needed:</h4>
+    <ul>
+      <li><strong>{{ result.total }}</strong> g</li>
+      <li>~<strong>{{ total_tsp | round(2) }}</strong> tsp</li>
+      <li>~<strong>{{ total_tbsp | round(2) }}</strong> tbsp</li>
+      <li>~<strong>{{ total_ml | round(2) }}</strong> mL</li>
+    </ul>
+
+    <h4>Daily Addition (4 days):</h4>
+    <ul>
+      <li><strong>{{ result.per_day }}</strong> g/day</li>
+      <li>~<strong>{{ per_day_tsp | round(2) }}</strong> tsp/day</li>
+      <li>~<strong>{{ per_day_tbsp | round(2) }}</strong> tbsp/day</li>
+      <li>~<strong>{{ per_day_ml | round(2) }}</strong> mL/day</li>
+    </ul>
+  {% endif %}
+{% endif %}
+<a href="{{ url_for('routes.calculator_bp.calculator_index') }}">← Back to Calculators</a>
+{% endblock %}

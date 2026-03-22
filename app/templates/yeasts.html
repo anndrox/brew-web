@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Yeast Reference</h1>
+
+<input type="text" id="yeastSearch" placeholder="🔍 Search yeast..." style="width: 100%; padding: 10px; margin-bottom: 20px;">
+
+<script>
+function filterYeastTable() {
+  const input = document.getElementById("yeastSearch").value.toLowerCase();
+  const rows = document.querySelectorAll(".yeast-row");
+  rows.forEach(row => {
+    row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
+  });
+}
+document.getElementById("yeastSearch").addEventListener("input", filterYeastTable);
+</script>
+
+{% for category, yeast_list in [
+    ("Mead", mead_yeasts),
+    ("Wine", wine_yeasts),
+    ("Beer", beer_yeasts),
+    ("Hard Cider", cider_yeasts),
+    ("Other", other_yeasts)
+] if yeast_list %}
+  <details open style="margin-bottom: 2em;">
+    <summary><h2 style="display: inline;">
+      {% if category == "Mead" %}🍯{% elif category == "Wine" %}🍷
+      {% elif category == "Beer" %}🍺{% elif category == "Hard Cider" %}🍎
+      {% else %}📦{% endif %}
+      {{ category }} Yeasts
+    </h2></summary>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+      <thead>
+        <tr style="background-color: #333; color: #fff;">
+          <th>Name</th>
+          <th>Tolerance</th>
+          <th>Strength</th>
+          <th>Sweetness</th>
+          <th>Flocculation</th>
+          <th>Attenuation</th>
+          <th>Notes</th>
+          {% if current_user.role == 'admin' %}
+          <th>Actions</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for yeast in yeast_list %}
+        <tr class="yeast-row" style="background-color: {% if loop.index0 % 2 == 0 %}#111{% else %}#1a1a1a{% endif %}; color: #eee;">
+          <td>{{ yeast.name }}</td>
+          <td>{{ yeast.tolerance or '—' }}</td>
+          <td>{{ yeast.strength or '—' }}</td>
+          <td>{{ yeast.sweetness_retention or '—' }}</td>
+          <td>{{ yeast.flocculation or '—' }}</td>
+          <td>{{ yeast.attenuation or '—' }}</td>
+          <td>{{ yeast.notes or '—' }}</td>
+          {% if current_user.role == 'admin' %}
+          <td>
+            {% if not yeast.is_default %}
+              <form method="POST" action="{{ url_for('routes.yeast_bp.delete_yeast', yeast_id=yeast.id) }}" style="display:inline;" onsubmit="return confirm('Delete this yeast?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button title="Delete" style="color:red;">❌</button>
+              </form>
+              <a href="{{ url_for('routes.yeast_bp.edit_yeast', yeast_id=yeast.id) }}">✏️</a>
+            {% else %}
+              🔒
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+{% endfor %}
+
+{% if current_user.role == 'admin' %}
+<hr/>
+<h3>Add New Yeast</h3>
+<form method="POST" action="{{ url_for('routes.yeast_bp.add_yeast') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Name:</label><br/>
+  <input name="name" required><br/>
+
+  <label>Alcohol Type:</label><br/>
+  <select name="alcohol_type" required>
+    <option value="Mead">Mead</option>
+    <option value="Wine">Wine</option>
+    <option value="Beer">Beer</option>
+    <option value="Hard Cider">Hard Cider</option>
+    <option value="Other">Other</option>
+  </select><br/>
+
+  <label>Alcohol Tolerance:</label><br/>
+  <input name="tolerance"><br/>
+
+  <label>Fermentation Strength:</label><br/>
+  <input name="strength"><br/>
+
+  <label>Sweetness Retention:</label><br/>
+  <input name="sweetness_retention"><br/>
+
+  <label>Flocculation:</label><br/>
+  <input name="flocculation"><br/>
+
+  <label>Attenuation (%):</label><br/>
+  <input name="attenuation"><br/>
+
+  <label>Notes:</label><br/>
+  <textarea name="notes" rows="3" cols="40"></textarea><br/><br/>
+
+  <button type="submit">➕ Add Yeast</button>
+</form>
+{% endif %}
+{% endblock %}

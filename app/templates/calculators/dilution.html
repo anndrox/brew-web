@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dilution Calculator</h1>
+<form method="POST">
+  <label>Original Volume ({{ 'liters' if unit_preference == 'metric' else 'gallons' }}):</label>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <input type="number" step="0.1" name="original_volume"><br>
+  <label>Original Gravity:</label>
+  <input type="number" step="0.001" name="original_gravity"><br>
+  <label>Target Gravity:</label>
+  <input type="number" step="0.001" name="target_gravity"><br>
+  <button type="submit">Calculate</button>
+</form>
+
+{% if result %}
+  <p>{{ result }}</p>
+{% endif %}
+
+<a href="{{ url_for('routes.calculator_bp.calculator_index') }}">← Back to Calculators</a>
+{% endblock %}
