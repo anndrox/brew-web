@@ -25,9 +25,9 @@ A self-hosted web app to manage mead brewing recipes, batches, and calculators â
 ### Installation
 
 ```bash
-wget https://github.com/anndrox/brew-web/raw/main/brew-web-1.4.0.zip
+wget https://github.com/anndrox/brew-web/raw/main/brew-web.zip
 
-unzip brew-web-1.4.0.zip -d .
+unzip brew-web.zip -d .
 
 cd brew-web
 
