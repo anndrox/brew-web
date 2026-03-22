@@ -4,16 +4,16 @@
 <form method="POST">
   <label>Current Gravity:</label>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-  <input type="number" step="0.001" name="og"><br>
+  <input type="number" step="0.001" name="current_gravity"><br>
   <label>Target Final Gravity:</label>
-  <input type="number" step="0.001" name="desired_sg"><br>
+  <input type="number" step="0.001" name="target_gravity"><br>
   <label>Batch Size ({{ 'liters' if unit_preference == 'metric' else 'gallons' }}):</label>
-  <input type="number" step="0.1" name="gallons" value="1"><br>
+  <input type="number" step="0.1" name="batch_volume" value="1"><br>
   <button type="submit">Calculate</button>
 </form>
 
 {% if result %}
-  <p>You need approximately <strong>{{ result }}</strong> lb of honey.</p>
+  <p>You need approximately <strong>{{ result.amount }} {{ result.unit }}</strong> of honey.</p>
 {% endif %}
 
 <a href="{{ url_for('routes.calculator_bp.calculator_index') }}">← Back to Calculators</a>

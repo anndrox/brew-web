@@ -20,6 +20,18 @@
 
 <!-- Quill styles -->
 <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<style>
+  .ingredient-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .ingredient-row input {
+    flex: 1 1 0;
+    min-width: 120px;
+  }
+</style>
 
 <h1>New Recipe</h1>
 
@@ -49,7 +61,7 @@
   {% endfor %}
 </select>
 <br/>
-  <h3>Ingredients (per {{ 'liter' if unit_preference == 'metric' else 'gallon' }})</h3>
+  <h3>Ingredients (per {{ display_unit }})</h3>
   <div id="ingredient-container">
     <div class="ingredient-row">
       <input name="ingredient_name_0" placeholder="Name" type="text" required/>
@@ -104,7 +116,6 @@
     const container = document.getElementById('ingredient-container');
     const div = document.createElement('div');
     div.className = 'ingredient-row';
-    div.style.marginBottom = '10px';
     div.innerHTML = `
       <input type="text" name="ingredient_name_${ingredientIndex}" placeholder="Name" required>
       <input type="number" step="0.01" name="ingredient_amount_${ingredientIndex}" placeholder="Amount" required>

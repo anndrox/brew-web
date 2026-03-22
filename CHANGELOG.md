@@ -3,9 +3,12 @@
 ## [v1.4.0] - 2026-03-21
 ### Added
 - Added flocculation and attenuation fields to yeast model
+- Added Target ABV calculator with imperial/metric outputs.
 
 ### Maintenance (2026-03-21)
 - Added global unit preference (imperial/metric) with admin setting; converted batch/forms/calculators to honor it.
+- Updated calculators (honey required, volume recovery, sweetness, carbonation) to display results in the selected unit system.
+- Improved ingredient row layout on New Recipe to keep spacing consistent when adding multiple rows.
 - Hardened imports: background import now runs schema repairs (tables/columns), seed, and status polling page.
 - Added import status page with auto-refresh and clear button.
 - Entry startup now waits for DB, auto-creates database, and guards required columns.

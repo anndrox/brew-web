@@ -12,9 +12,6 @@
   <label for="target_co2">Target CO₂ Volumes (e.g. 2.5):</label><br>
   <input type="number" name="target_co2" step="0.1" required><br><br>
 
-  <label for="current_temp">Current Temp (°F):</label><br>
-  <input type="number" name="current_temp" step="0.1" required><br><br>
-
   <button type="submit">Calculate</button>
 </form>
 
@@ -23,7 +20,7 @@
   {% if result == "Invalid input" %}
     <p style="color:red;">Please enter valid numeric values.</p>
   {% else %}
-    <p>Use approximately <strong>{{ result }} oz</strong> of corn sugar (dextrose).</p>
+    <p>Use approximately <strong>{{ result.amount }} {{ result.unit }}</strong> of corn sugar (dextrose).</p>
   {% endif %}
 {% endif %}
 

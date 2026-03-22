@@ -12,17 +12,13 @@
 </p>
 <h3>Instructions</h3>
 <p>{{ recipe.content.replace('\n', '<br>') | safe }}</p>
-<h3>Ingredients (per {{ 'liter' if unit_preference == 'metric' else 'gallon' }})</h3>
-{% if recipe.ingredients %}
+<h3>Ingredients (per {{ display_unit }})</h3>
+{% if ingredients_view %}
   <ul>
-    {% for ingredient in recipe.ingredients %}
+    {% for ing in ingredients_view %}
       <li>
-        {% if unit_preference == 'metric' %}
-          {{ (ingredient.amount_per_gallon / 3.78541) | round(2) }} {{ ingredient.unit }} {{ ingredient.name }}
-        {% else %}
-          {{ ingredient.amount_per_gallon }} {{ ingredient.unit }} {{ ingredient.name }}
-        {% endif %}
-        {% if ingredient.note %} - <em>{{ ingredient.note }}</em>{% endif %}
+        {{ ing.base_amount }} {{ ing.unit_label }} {{ ing.name }}
+        {% if ing.note %} - <em>{{ ing.note }}</em>{% endif %}
       </li>
     {% endfor %}
   </ul>
@@ -30,17 +26,13 @@
   <p>No ingredients listed.</p>
 {% endif %}
 
-<h3>Scaled Ingredients for {{ target_batch }} {{ 'liter' if unit_preference == 'metric' else 'gallon' }}{% if target_batch > 1 %}s{% endif %}</h3>
-{% if recipe.ingredients %}
+<h3>Scaled Ingredients for {{ target_batch }} {{ display_unit }}{% if target_batch > 1 %}s{% endif %}</h3>
+{% if ingredients_view %}
   <ul>
-    {% for ingredient in recipe.ingredients %}
+    {% for ing in ingredients_view %}
       <li>
-        {% if unit_preference == 'metric' %}
-          {{ (ingredient.amount_per_gallon * target_batch_gal)|round(2) }} {{ ingredient.unit }} {{ ingredient.name }}
-        {% else %}
-          {{ (ingredient.amount_per_gallon * target_batch)|round(2) }} {{ ingredient.unit }} {{ ingredient.name }}
-        {% endif %}
-        {% if ingredient.note %} - <em>{{ ingredient.note }}</em>{% endif %}
+        {{ ing.scaled_amount }} {{ ing.unit_label }} {{ ing.name }}
+        {% if ing.note %} - <em>{{ ing.note }}</em>{% endif %}
       </li>
     {% endfor %}
   </ul>

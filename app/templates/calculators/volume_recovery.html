@@ -14,7 +14,7 @@
 
 {% if result %}
   <h3>Suggested Additions</h3>
-  <p>Add {{ result.honey }} lb of honey and {{ result.water }} {{ result.unit if result.unit else 'gallons' }} of water.</p>
+  <p>Add {{ result.honey }} {{ result.honey_unit }} of honey and {{ result.water }} {{ result.unit if result.unit else ('liters' if unit_preference == 'metric' else 'gallons') }} of water.</p>
 {% endif %}
 
 <a href="{{ url_for('routes.calculator_bp.calculator_index') }}">← Back to Calculators</a>

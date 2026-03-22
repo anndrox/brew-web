@@ -36,7 +36,7 @@
   <div id="quill-editor" style="height: 200px; background-color: white;"></div>
   <input type="hidden" name="content" id="content"><br/><br/>
 
-  <h3>Ingredients (per {{ 'liter' if unit_preference == 'metric' else 'gallon' }})</h3>
+  <h3>Ingredients (per {{ display_unit }})</h3>
   <div id="ingredient-container">
     {% for ingredient in recipe.ingredients %}
       {% set i = loop.index0 %}

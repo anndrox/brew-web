@@ -2,7 +2,7 @@
 {% block content %}
 <h1>Honey Required Calculator</h1>
 
-<p>Estimate the amount of honey (in pounds) needed to reach a target original gravity.</p>
+<p>Estimate the amount of honey needed to reach a target original gravity.</p>
 
 <form method="POST">
   <label for="volume">Batch Volume ({{ 'liters' if unit_preference == 'metric' else 'gallons' }}):</label><br>
@@ -20,7 +20,7 @@
   {% if result == "Invalid input" %}
     <p style="color:red;">Please enter valid numeric values.</p>
   {% else %}
-    <p>You will need approximately <strong>{{ result }} lbs</strong> of honey.</p>
+    <p>You will need approximately <strong>{{ result.amount }} {{ result.unit }}</strong> of honey.</p>
   {% endif %}
 {% endif %}
 

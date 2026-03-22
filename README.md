@@ -20,21 +20,20 @@ A self-hosted web app to manage mead brewing recipes, batches, and calculators â
 - [Docker Compose](https://docs.docker.com/compose/)
 - A `.env` file in the project root (copy `.env.example`) with `SECRET_KEY` set to a non-empty value.
 - For local/test you can set `SECRET_KEY=test-key`; for production use a long random value.
+- **Before upgrading:** always create a fresh SQL backup from `/settings/admin` (Export). The importer now rewrites schemas and reseeds data; having your own dump ensures you can roll back if something unexpected happens.
 
 ### Installation
 
 ```bash
-wget https://github.com/anndrox/brew-web/blob/dev/brew-web.zip
+wget https://github.com/anndrox/brew-web/raw/main/brew-web-1.4.0.zip
 
-unzip brew-web.zip -d .
+unzip brew-web-1.4.0.zip -d .
 
 cd brew-web
 
 # create .env from template and set SECRET_KEY
 cp .env.example .env
 $EDITOR .env   # set SECRET_KEY to a non-empty value
-or
-nano .env
 
 docker compose up -d --build
 ```

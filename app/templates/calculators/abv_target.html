@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Target ABV Calculator</h1>
+<p>Estimate how much honey to add to reach a desired ABV.</p>
+
+<form method="POST">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+  <label>Batch Volume ({{ 'liters' if unit_preference == 'metric' else 'gallons' }}):</label><br>
+  <input type="number" step="0.1" name="volume" required><br><br>
+
+  <label>Current Gravity (SG):</label><br>
+  <input type="number" step="0.001" name="current_gravity" placeholder="e.g. 1.050" required><br><br>
+
+  <label>Target ABV (%):</label><br>
+  <input type="number" step="0.1" name="target_abv" placeholder="e.g. 12.0" required><br><br>
+
+  <label>Expected Final Gravity (optional, default 1.000):</label><br>
+  <input type="number" step="0.001" name="target_fg" placeholder="1.000"><br><br>
+
+  <button type="submit">Calculate</button>
+</form>
+
+{% if result %}
+  {% if result.error %}
+    <p style="color:red;">{{ result.error }}</p>
+  {% else %}
+    <h3>Result</h3>
+    <p>Add approximately <strong>{{ result.amount }} {{ result.unit }}</strong> of honey.</p>
+    <p>New target OG: <strong>{{ result.target_og }}</strong></p>
+  {% endif %}
+{% endif %}
+
+<a href="{{ url_for('routes.calculator_bp.calculator_index') }}">← Back to Calculators</a>
+{% endblock %}

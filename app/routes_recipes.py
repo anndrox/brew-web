@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
 from app.models import db, Recipe, Ingredient, Yeast
-from app.utils import role_required, get_unit_preference, liters_to_gallons, gallons_to_liters
+from app.utils import role_required, get_unit_preference, gallons_to_liters
 
 recipes_bp = Blueprint("recipes_bp", __name__)
 
@@ -28,6 +28,7 @@ def new_recipe():
         name = request.form['name']
         content = request.form['content']
         units = get_unit_preference()
+        display_unit = 'liter' if units == 'metric' else 'gallon'
 
         recipe = Recipe(
             name=name,
@@ -61,7 +62,9 @@ def new_recipe():
         return redirect(url_for('routes.recipes_bp.index'))
 
     yeasts = Yeast.query.order_by(Yeast.name).all()
-    return render_template('new_recipe.html', yeasts=yeasts, unit_preference=get_unit_preference())
+    units = get_unit_preference()
+    display_unit = 'liter' if units == 'metric' else 'gallon'
+    return render_template('new_recipe.html', yeasts=yeasts, unit_preference=units, display_unit=display_unit)
 
 @recipes_bp.route('/recipes/<int:recipe_id>')
 @login_required
@@ -69,13 +72,38 @@ def view_recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     units = get_unit_preference()
     target_batch = request.args.get('target_batch', type=float, default=1)
-    target_batch_gal = liters_to_gallons(target_batch) if units == 'metric' else target_batch
+    display_unit = 'liter' if units == 'metric' else 'gallon'
+
+    ingredients_view = []
+    GALLON_TO_LITER = 3.78541
+    for ing in recipe.ingredients:
+        unit_label = ing.unit or ''
+        # Normalize “gallon(s)” label when showing metric
+        if units == 'metric' and unit_label.lower() in ['gallon', 'gallons']:
+            unit_label = 'liters'
+
+        if units == 'metric':
+            base_amount = round((ing.amount_per_gallon or 0) / GALLON_TO_LITER, 2)
+            scaled_amount = round(base_amount * target_batch, 2)
+        else:
+            base_amount = ing.amount_per_gallon or 0
+            scaled_amount = round(base_amount * target_batch, 2)
+
+        ingredients_view.append({
+            "name": ing.name,
+            "note": ing.note,
+            "base_amount": base_amount,
+            "scaled_amount": scaled_amount,
+            "unit_label": unit_label
+        })
+
     return render_template(
         'recipe_detail.html',
         recipe=recipe,
         target_batch=target_batch,
-        target_batch_gal=target_batch_gal,
-        unit_preference=units
+        unit_preference=units,
+        display_unit=display_unit,
+        ingredients_view=ingredients_view
     )
 
 @recipes_bp.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
@@ -85,6 +113,7 @@ def edit_recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     if request.method == 'POST':
         units = get_unit_preference()
+        display_unit = 'liter' if units == 'metric' else 'gallon'
         recipe.name = request.form['name']
         recipe.content = request.form['content']
         recipe.alcohol_type = request.form.get('alcohol_type') or None
@@ -115,7 +144,9 @@ def edit_recipe(recipe_id):
         return redirect(url_for('routes.recipes_bp.view_recipe', recipe_id=recipe.id))
 
     yeasts = Yeast.query.order_by(Yeast.name).all()
-    return render_template('edit_recipe.html', recipe=recipe, yeasts=yeasts, unit_preference=get_unit_preference(), gallons_to_liters=gallons_to_liters)
+    units = get_unit_preference()
+    display_unit = 'liter' if units == 'metric' else 'gallon'
+    return render_template('edit_recipe.html', recipe=recipe, yeasts=yeasts, unit_preference=units, display_unit=display_unit, gallons_to_liters=gallons_to_liters)
 
 
 @recipes_bp.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
