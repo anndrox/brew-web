@@ -33,7 +33,9 @@
 						  <li><a href="{{ url_for('routes.admin_bp.admin_settings', open='settings') }}">Administration</a></li>
 						{% endif %}
 						<li><a href="{{ url_for('routes.settings_bp.settings_customize', open='settings') }}">Customize</a></li>
+            {% if local_login_enabled %}
 						<li><a href="{{ url_for('routes.settings_bp.settings_password', open='settings') }}">Change Password</a></li>
+            {% endif %}
 						<li><a href="{{ url_for('auth_bp.logout') }}">🚪 Logout</a></li>
 					  </ul>
 					</li>

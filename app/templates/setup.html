@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
+  {% if oidc_enabled %}
+  <div style="max-width: 500px; margin: 40px auto; background-color: #2b2b2b; padding: 20px; border-radius: 8px;">
+    <h2 class="mt-4" style="text-align: center;">🔐 SSO Setup</h2>
+    <p>Brew Web is configured to use Authentik OIDC for authentication.</p>
+    <p>The first signed-in user will be created automatically from OIDC claims.</p>
+    <p><a class="btn btn-primary" href="{{ url_for('auth_bp.oidc_login') }}" style="display: inline-block; width: 100%; text-align: center;">Continue with Authentik</a></p>
+  </div>
+  {% else %}
   <div style="max-width: 500px; margin: 40px auto; background-color: #2b2b2b; padding: 20px; border-radius: 8px;">
     <h2 class="mt-4" style="text-align: center;">🧪 First-Time Setup</h2>
 
@@ -25,4 +33,5 @@
       <button type="submit" class="btn btn-primary" style="width: 100%;">Create Admin Account</button>
     </form>
   </div>
+  {% endif %}
 {% endblock %}

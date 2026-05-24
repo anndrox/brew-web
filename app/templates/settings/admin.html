@@ -33,6 +33,9 @@
 {% endif %}
 
 <h2>Users</h2>
+{% if not local_login_enabled %}
+<p>User accounts are provisioned through Authentik OIDC. Roles are derived from group claims on login.</p>
+{% endif %}
 <table>
   <tr>
     <th>Username</th>
@@ -43,7 +46,9 @@
   <tr>
     <td>{{ user.username }}</td>
     <td>{{ user.role }}</td>
+    <td>{{ user.auth_source }}</td>
     <td>
+      {% if local_login_enabled %}
       <form action="{{ url_for('routes.admin_bp.delete_user', user_id=user.id) }}" method="post" style="display:inline;">
         <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
         <button type="submit">🗑️ Delete</button>
@@ -53,11 +58,15 @@
         <input name="password" placeholder="New Password" required>
         <button type="submit">🔒 Reset Password</button>
       </form>
+      {% else %}
+      <span>Managed by SSO</span>
+      {% endif %}
     </td>
   </tr>
   {% endfor %}
 </table>
 
+{% if local_login_enabled %}
 <h3>Create New User</h3>
 <form action="{{ url_for('routes.admin_bp.create_user') }}" method="post">
   <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
@@ -71,6 +80,7 @@
   </select>
   <button type="submit">➕ Add User</button>
 </form>
+{% endif %}
 
 <hr>
 <h2>App Settings</h2>

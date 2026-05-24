@@ -13,10 +13,21 @@ from app.decorators import role_required
 from app.utils import is_strong_password, check_for_updates, read_import_status_file
 from datetime import datetime
 import re
+from config import Config
 
 BACKUP_FOLDER = os.path.join(os.getcwd(), "backups")
 os.makedirs(BACKUP_FOLDER, exist_ok=True)
 IMPORT_STATUS_PATH = None
+
+
+def local_login_enabled():
+    return not Config.DISABLE_LOCAL_LOGIN
+
+
+def pg_env():
+    env = os.environ.copy()
+    env['PGPASSWORD'] = Config.BREW_DB_PASSWORD
+    return env
 
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/settings/admin')
 
@@ -59,6 +70,10 @@ def update_base_url():
 @login_required
 @role_required('admin')
 def create_user():
+    if not local_login_enabled():
+        flash('Local user management is disabled while OIDC SSO is enabled.', 'warning')
+        return redirect(url_for('routes.admin_bp.admin_settings'))
+
     username = request.form.get('username')
     password = request.form.get('password')
     role = request.form.get('role')
@@ -82,6 +97,10 @@ def create_user():
 @login_required
 @role_required('admin')
 def delete_user(user_id):
+    if not local_login_enabled():
+        flash('Local user management is disabled while OIDC SSO is enabled.', 'warning')
+        return redirect(url_for('routes.admin_bp.admin_settings'))
+
     if user_id == current_user.id:
         flash("Cannot delete your own account.", "danger")
         return redirect(url_for('routes.admin_bp.admin_settings'))
@@ -96,6 +115,10 @@ def delete_user(user_id):
 @login_required
 @role_required('admin')
 def update_password(user_id):
+    if not local_login_enabled():
+        flash('Local password management is disabled while OIDC SSO is enabled.', 'warning')
+        return redirect(url_for('routes.admin_bp.admin_settings'))
+
     user = User.query.get_or_404(user_id)
     new_pw = request.form.get('password')
     user.set_password(new_pw)
@@ -115,13 +138,13 @@ def create_backup():
         with open(backup_path, "w") as f:
             subprocess.run([
                 "pg_dump",
-                "-h", "db",
-                "-U", "brewuser",
-                "-d", "brewweb",
+                "-h", Config.BREW_DB_HOST,
+                "-U", Config.BREW_DB_USER,
+                "-d", Config.BREW_DB_NAME,
                 "--no-owner",
                 "--no-privileges",
                 "--inserts"
-            ], check=True, env={"PGPASSWORD": "brewpass"}, stdout=f)
+            ], check=True, env=pg_env(), stdout=f)
 
         flash("New backup created successfully.", "success")
     except subprocess.CalledProcessError as e:
@@ -163,14 +186,14 @@ def export_db():
         with open(backup_path, "w") as f_out:
             subprocess.run([
                 "pg_dump",
-                "-h", "db",
-                "-U", "brewuser",
-                "-d", "brewweb",
+                "-h", Config.BREW_DB_HOST,
+                "-U", Config.BREW_DB_USER,
+                "-d", Config.BREW_DB_NAME,
                 "--no-owner",
                 "--no-privileges",
                 "--inserts",
                 "--quote-all-identifiers"  # 👈 ensures "User" is preserved
-            ], check=True, env={"PGPASSWORD": "brewpass"}, stdout=f_out)
+            ], check=True, env=pg_env(), stdout=f_out)
 
         flash("Export completed successfully.", "success")
         return send_file(backup_path, as_attachment=True)

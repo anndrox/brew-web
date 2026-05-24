@@ -7,3 +7,4 @@ Flask-WTF
 psycopg2-binary
 gunicorn
 requests
+Authlib

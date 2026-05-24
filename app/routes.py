@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
-from flask_login import login_user, logout_user, current_user, login_required
+from flask_login import current_user, login_required
 from .models import db, Recipe, Measurement, Batch, Ingredient, User
 from datetime import datetime
 from app import limiter
@@ -11,27 +11,12 @@ routes = Blueprint("routes", __name__, url_prefix="/app")
 @routes.route('/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def login():
-    if not User.query.first():
-        return redirect(url_for('routes.setup'))
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
-            login_user(user)
-            flash('Logged in successfully.', 'success')
-            return redirect(url_for('routes.index'))
-        else:
-            time.sleep(1)  # delays brute-force timing analysis
-            flash('Invalid username or password.', 'error')
-    return render_template('login.html')
+    return redirect(url_for('auth_bp.login'))
 
 @routes.route('/logout')
 @login_required
 def logout():
-    logout_user()
-    flash('Logged out successfully.', 'success')
-    return redirect(url_for('routes.login'))
+    return redirect(url_for('auth_bp.logout'))
 
 # === INDEX ===
 @routes.route('/')

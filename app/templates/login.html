@@ -3,6 +3,12 @@
 {% block content %}
 <h2 class="mt-4">Login</h2>
 
+{% if oidc_enabled %}
+<p>Sign in with Authentik SSO to access Brew Web.</p>
+<p><a class="btn btn-primary" href="{{ url_for('auth_bp.oidc_login') }}">Continue with Authentik</a></p>
+{% endif %}
+
+{% if local_login_enabled %}
 <form method="POST">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
@@ -30,4 +36,5 @@
 
   <button type="submit" class="btn btn-primary">Log In</button>
 </form>
+{% endif %}
 {% endblock %}
