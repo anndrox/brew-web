@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   web:
-    build: .
+    image: ghcr.io/anndrox/brew-web:latest
     env_file: .env
     ports:
       - "4452:4452"  # External:Internal
