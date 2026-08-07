@@ -10,7 +10,7 @@ services:
       TZ: America/New_York
       FLASK_ENV: production
       SECRET_KEY: ${SECRET_KEY}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://brewuser:brewpass@db:5432/brewweb}  # Internal DB access
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-brewuser}:${POSTGRES_PASSWORD:-brewpass}@${POSTGRES_HOST:-db}:5432/${POSTGRES_DB:-brewweb}}
     depends_on:
       db:
         condition: service_healthy  # ✅ Wait until DB is healthy
@@ -25,13 +25,13 @@ services:
     ports:
       - "5544:5432"  # Expose externally on 5544
     environment:
-      POSTGRES_USER: brewuser
-      POSTGRES_PASSWORD: brewpass
-      POSTGRES_DB: brewweb
+      POSTGRES_USER: ${POSTGRES_USER:-brewuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-brewpass}
+      POSTGRES_DB: ${POSTGRES_DB:-brewweb}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "brewuser", "-d", "postgres"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-brewuser}", "-d", "postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -43,9 +43,9 @@ services:
     entrypoint: /bin/sh
     volumes:
       - ./backups:/backups
-    command: -c 'pg_dump -U brewuser -h db -d brewweb --no-owner --no-privileges --inserts -f /backups/manual_backup.sql'
+    command: -c 'pg_dump -U ${POSTGRES_USER:-brewuser} -h ${POSTGRES_HOST:-db} -d ${POSTGRES_DB:-brewweb} --no-owner --no-privileges --inserts -f /backups/manual_backup.sql'
     environment:
-      PGPASSWORD: brewpass
+      PGPASSWORD: ${POSTGRES_PASSWORD:-brewpass}
 
 volumes:
   pgdata:
