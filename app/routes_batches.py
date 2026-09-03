@@ -24,7 +24,7 @@ def list_batches():
     cider_batches = Batch.query.filter_by(alcohol_type='Hard Cider').order_by(Batch.start_date.desc()).all()
 
     other_batches = Batch.query.filter(
-        ~Batch.alcohol_type.in_(['Mead', 'Wine', 'Beer', 'Hard Cider']) | (Batch.alcohol_type == None)
+        ~Batch.alcohol_type.in_(['Mead', 'Wine', 'Beer', 'Hard Cider']) | Batch.alcohol_type.is_(None)
     ).order_by(Batch.start_date.desc()).all()
 
     return render_template(
@@ -249,6 +249,7 @@ def new_batch():
             tosna_per_day=tosna_per_day,
             initial_gravity=initial_gravity,
             final_gravity=final_gravity,
+            abv=abv,
             batch_size=batch_size,
             fermentation_temp=fermentation_temp,
             water_type=request.form.get('water_type') or None,

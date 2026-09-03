@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a reproducible Brew-Web problem.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please avoid including passwords, database dumps, or other sensitive data.
+  - type: input
+    id: version
+    attributes:
+      label: Brew-Web version
+      placeholder: v1.4.0 or commit SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installation method
+      options:
+        - Docker Compose from source
+        - GHCR image
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: What did you do, and what happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant sanitized logs
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and removed secrets from this report.
+          required: true

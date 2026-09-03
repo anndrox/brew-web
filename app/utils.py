@@ -6,14 +6,22 @@ from config import Config
 import re
 import json
 import os
+import time
+from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
+
+_update_cache = None
+_update_cache_at = 0.0
+_UPDATE_CACHE_SECONDS = 3600
 
 def is_strong_password(password):
     return (
+        bool(password) and
         len(password) >= 8 and
         re.search(r'[A-Z]', password) and
         re.search(r'[a-z]', password) and
-        re.search(r'[\W_]', password)  # requires a symbol
+        re.search(r'\d', password) and
+        re.search(r'[\W_]', password)
     )
 
 def role_required(*roles):
@@ -27,17 +35,25 @@ def role_required(*roles):
     return wrapper
 
 def check_for_updates():
+    global _update_cache, _update_cache_at
+
+    now = time.monotonic()
+    if _update_cache is not None and now - _update_cache_at < _UPDATE_CACHE_SECONDS:
+        return _update_cache
+
     try:
         latest_url = "https://raw.githubusercontent.com/anndrox/brew-web/main/VERSION"
-        resp = requests.get(latest_url, timeout=5)
+        resp = requests.get(latest_url, timeout=2)
 
         if resp.status_code == 200:
             latest_version = resp.text.strip()
-            return {
+            _update_cache = {
                 "update_available": latest_version != Config.VERSION,
                 "current": Config.VERSION,
                 "latest": latest_version
             }
+            _update_cache_at = now
+            return _update_cache
     except Exception as e:
         return {
             "update_available": False,
@@ -62,7 +78,7 @@ def get_unit_preference():
     except ProgrammingError:
         try:
             from app import db
-            db.session.execute("ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS unit_preference VARCHAR(10) DEFAULT 'imperial';")
+            db.session.execute(text("ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS unit_preference VARCHAR(10) DEFAULT 'imperial';"))
             db.session.commit()
             settings = AppSettings.query.first()
             if settings and settings.unit_preference in ('imperial', 'metric'):

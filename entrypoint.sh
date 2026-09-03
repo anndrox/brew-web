@@ -1,41 +1,41 @@
 #!/bin/sh
-# Entry script for the web container:
-# 1) Ensure Alembic is initialized (if migrations/env.py is missing).
-# 2) Run migrations/upgrade (best effort) to keep the DB schema current.
-# 3) Seed default yeast data (best effort).
-# 4) Start Gunicorn on port 4452 with access/error logging.
+set -eu
 
-# Ensure psql commands can authenticate (can be overridden via PGPASSWORD env)
-export PGPASSWORD="${PGPASSWORD:-brewpass}"
+db_host="${POSTGRES_HOST:-db}"
+db_user="${POSTGRES_USER:-brewuser}"
+db_name="${POSTGRES_DB:-brewweb}"
+export PGPASSWORD="${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
 
-echo "⏳ Waiting for database..."
-until psql -h db -U brewuser -d postgres -tAc "SELECT 1" >/dev/null 2>&1; do
+printf '%s\n' 'Waiting for PostgreSQL...'
+until psql -h "$db_host" -U "$db_user" -d "$db_name" -tAc 'SELECT 1' >/dev/null 2>&1; do
   sleep 1
 done
 
-echo "📦 Running database migrations..."
+# v1.4.0 and earlier generated migrations at startup. If an existing database
+# has application tables but no Alembic metadata, mark it at this reviewed
+# baseline before applying future committed migrations.
+has_alembic="$(psql -h "$db_host" -U "$db_user" -d "$db_name" -tAc "SELECT to_regclass('public.alembic_version') IS NOT NULL")"
+has_users="$(psql -h "$db_host" -U "$db_user" -d "$db_name" -tAc "SELECT to_regclass('public.user') IS NOT NULL")"
 
-if [ ! -f "/app/migrations/env.py" ]; then
-  echo "🗂️ Initializing Alembic..."
-  flask db init
+if [ "$has_alembic" != 't' ] && [ "$has_users" = 't' ]; then
+  printf '%s\n' 'Applying legacy v1.4 compatibility fixes...'
+  psql -v ON_ERROR_STOP=1 -h "$db_host" -U "$db_user" -d "$db_name" \
+    -f migrations/legacy_v1_4_compat.sql
+  printf '%s\n' 'Stamping existing v1.4 schema at the migration baseline...'
+  flask db stamp head
 fi
 
-# Ensure database exists (handles fresh volumes)
-echo "🗄️ Ensuring database brewweb exists..."
-if ! psql -h db -U brewuser -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='brewweb';" | grep -q 1; then
-  createdb -h db -U brewuser -O brewuser -E UTF8 brewweb || true
-fi
+printf '%s\n' 'Applying database migrations...'
+flask db upgrade
 
-flask db migrate -m "Auto migration" || true
-flask db upgrade || true
+printf '%s\n' 'Seeding default yeast data...'
+flask seed-yeasts
 
-# Guard against missing new columns on restored backups (run after upgrade so table exists)
-echo "🔧 Ensuring app_settings.unit_preference column exists..."
-psql -h db -U brewuser -d brewweb -c "ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS unit_preference VARCHAR(10) DEFAULT 'imperial';" || true
-
-echo "🌱 Seeding yeast types (if missing)..."
-flask seed-yeasts || true
-
-exec gunicorn -w 4 -b 0.0.0.0:4452 wsgi:app \
-  --access-logfile logs/access.log \
-  --error-logfile logs/brewweb.log
+exec gunicorn \
+  --workers "${GUNICORN_WORKERS:-1}" \
+  --bind 0.0.0.0:4452 \
+  --no-control-socket \
+  --access-logfile - \
+  --error-logfile - \
+  --timeout "${GUNICORN_TIMEOUT:-60}" \
+  wsgi:app

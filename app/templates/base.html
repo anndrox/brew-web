@@ -34,7 +34,12 @@
 						{% endif %}
 						<li><a href="{{ url_for('routes.settings_bp.settings_customize', open='settings') }}">Customize</a></li>
 						<li><a href="{{ url_for('routes.settings_bp.settings_password', open='settings') }}">Change Password</a></li>
-						<li><a href="{{ url_for('auth_bp.logout') }}">🚪 Logout</a></li>
+						<li>
+                          <form method="POST" action="{{ url_for('auth_bp.logout') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit">🚪 Logout</button>
+                          </form>
+                        </li>
 					  </ul>
 					</li>
 <div style="margin-top: 10px;"></div>
@@ -68,8 +73,4 @@
   }
 	</script>
 </body>
-
-  </a>
-</footer>
-
 </html>

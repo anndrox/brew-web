@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
 from app.models import db, Recipe, Ingredient, Yeast
-from app.utils import role_required, get_unit_preference, gallons_to_liters
+from app.utils import role_required, get_unit_preference, gallons_to_liters, liters_to_gallons
 
 recipes_bp = Blueprint("recipes_bp", __name__)
 
@@ -16,7 +16,7 @@ def index():
     mead_recipes = Recipe.query.filter_by(alcohol_type='Mead').order_by(Recipe.name.asc()).all()
     wine_recipes = Recipe.query.filter_by(alcohol_type='Wine').order_by(Recipe.name.asc()).all()
     beer_recipes = Recipe.query.filter_by(alcohol_type='Beer').order_by(Recipe.name.asc()).all()
-    other_recipes = Recipe.query.filter(Recipe.alcohol_type == None).order_by(Recipe.name.asc()).all()
+    other_recipes = Recipe.query.filter(Recipe.alcohol_type.is_(None)).order_by(Recipe.name.asc()).all()
     return render_template('index.html', mead_recipes=mead_recipes, wine_recipes=wine_recipes,
                            beer_recipes=beer_recipes, other_recipes=other_recipes)
 

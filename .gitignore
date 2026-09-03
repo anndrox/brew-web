@@ -1,13 +1,16 @@
-# Flask instance directory (runtime files, secrets, etc.)
-instance/
+# Runtime files. Keep empty directories so non-root containers can mount them.
+instance/*
+!instance/.gitkeep
 
 # Local backups and bundles
-backups/
-brew-web.zip
+backups/*
+!backups/.gitkeep
+*.zip
 
 # Environment and secrets
 .env
 .env.*
+!.env.example
 
 # Python artifacts
 __pycache__/
@@ -15,8 +18,11 @@ __pycache__/
 *.pyo
 *.pyd
 .pytest_cache/
+.ruff_cache/
+.venv/
 .coverage
 .coverage.*
+htmlcov/
 
 # Editors/OS
 .vscode/
@@ -24,5 +30,6 @@ __pycache__/
 .DS_Store
 
 # Logs and runtime output
-logs/
+logs/*
+!logs/.gitkeep
 *.log

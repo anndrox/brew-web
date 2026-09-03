@@ -13,7 +13,7 @@ def list_yeasts():
     beer_yeasts = Yeast.query.filter_by(alcohol_type="Beer").all()
     cider_yeasts = Yeast.query.filter_by(alcohol_type="Hard Cider").all()
     other_yeasts = Yeast.query.filter(
-        ~Yeast.alcohol_type.in_(["Mead", "Wine", "Beer", "Hard Cider"]) | (Yeast.alcohol_type == None)
+        ~Yeast.alcohol_type.in_(["Mead", "Wine", "Beer", "Hard Cider"]) | Yeast.alcohol_type.is_(None)
     ).all()
     return render_template("yeasts.html", mead_yeasts=mead_yeasts, wine_yeasts=wine_yeasts,
                            beer_yeasts=beer_yeasts, cider_yeasts=cider_yeasts,

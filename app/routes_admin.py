@@ -1,12 +1,12 @@
 import os
 import subprocess
-import glob
 import threading
 import json
-from flask import Blueprint, render_template, redirect, url_for, request, flash, abort, send_file, current_app, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, flash, abort, send_file, send_from_directory, current_app, jsonify
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
+from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
 from .models import db, User, AppSettings
 from app.decorators import role_required
@@ -17,6 +17,23 @@ import re
 BACKUP_FOLDER = os.path.join(os.getcwd(), "backups")
 os.makedirs(BACKUP_FOLDER, exist_ok=True)
 IMPORT_STATUS_PATH = None
+DB_HOST = os.environ.get('POSTGRES_HOST', 'db')
+DB_USER = os.environ.get('POSTGRES_USER', 'brewuser')
+DB_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
+DB_NAME = os.environ.get('POSTGRES_DB', 'brewweb')
+
+
+def _postgres_env():
+    env = os.environ.copy()
+    env['PGPASSWORD'] = DB_PASSWORD
+    return env
+
+
+def _backup_path(filename):
+    safe_name = secure_filename(filename)
+    if safe_name != filename or not safe_name.endswith(('.sql', '.dump')):
+        abort(400)
+    return safe_name, os.path.join(BACKUP_FOLDER, safe_name)
 
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/settings/admin')
 
@@ -29,7 +46,7 @@ def admin_settings():
         settings = AppSettings.query.first() or AppSettings()
     except ProgrammingError:
         # Likely missing new columns on restored backup; patch and retry once
-        db.session.execute("ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS unit_preference VARCHAR(10) DEFAULT 'imperial';")
+        db.session.execute(text("ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS unit_preference VARCHAR(10) DEFAULT 'imperial';"))
         db.session.commit()
         settings = AppSettings.query.first() or AppSettings()
     if not settings.unit_preference:
@@ -63,12 +80,16 @@ def create_user():
     password = request.form.get('password')
     role = request.form.get('role')
 
+    if role not in {'admin', 'editor', 'user'}:
+        flash('Invalid role.', 'danger')
+        return redirect(url_for('routes.admin_bp.admin_settings'))
+
     if User.query.filter_by(username=username).first():
         flash('Username already exists.', 'danger')
         return redirect(url_for('routes.admin_bp.admin_settings'))
 
     if not is_strong_password(password):
-        flash('Weak password.', 'danger')
+        flash('Use at least 8 characters with upper- and lowercase letters, a number, and a symbol.', 'danger')
         return redirect(url_for('routes.admin_bp.admin_settings'))
 
     hashed = generate_password_hash(password)
@@ -98,6 +119,9 @@ def delete_user(user_id):
 def update_password(user_id):
     user = User.query.get_or_404(user_id)
     new_pw = request.form.get('password')
+    if not is_strong_password(new_pw):
+        flash('Use at least 8 characters with upper- and lowercase letters, a number, and a symbol.', 'danger')
+        return redirect(url_for('routes.admin_bp.admin_settings'))
     user.set_password(new_pw)
     db.session.commit()
     flash("Password updated.", "success")
@@ -115,13 +139,13 @@ def create_backup():
         with open(backup_path, "w") as f:
             subprocess.run([
                 "pg_dump",
-                "-h", "db",
-                "-U", "brewuser",
-                "-d", "brewweb",
+                "-h", DB_HOST,
+                "-U", DB_USER,
+                "-d", DB_NAME,
                 "--no-owner",
                 "--no-privileges",
                 "--inserts"
-            ], check=True, env={"PGPASSWORD": "brewpass"}, stdout=f)
+            ], check=True, env=_postgres_env(), stdout=f)
 
         flash("New backup created successfully.", "success")
     except subprocess.CalledProcessError as e:
@@ -133,20 +157,20 @@ def create_backup():
 @login_required
 @role_required('admin')
 def download_backup(filename):
-    path = os.path.join(BACKUP_FOLDER, filename)
+    safe_name, path = _backup_path(filename)
     if not os.path.exists(path):
         flash("Backup file not found.", "danger")
         return redirect(url_for('routes.admin_bp.admin_settings'))
-    return send_file(path, as_attachment=True)
+    return send_from_directory(BACKUP_FOLDER, safe_name, as_attachment=True)
 
 @admin_bp.route('/delete-backup/<filename>', methods=['POST'])
 @login_required
 @role_required('admin')
 def delete_backup(filename):
-    path = os.path.join(BACKUP_FOLDER, filename)
+    safe_name, path = _backup_path(filename)
     if os.path.exists(path):
         os.remove(path)
-        flash(f"{filename} deleted.", "success")
+        flash(f"{safe_name} deleted.", "success")
     else:
         flash("File not found.", "danger")
     return redirect(url_for('routes.admin_bp.admin_settings'))
@@ -163,14 +187,14 @@ def export_db():
         with open(backup_path, "w") as f_out:
             subprocess.run([
                 "pg_dump",
-                "-h", "db",
-                "-U", "brewuser",
-                "-d", "brewweb",
+                "-h", DB_HOST,
+                "-U", DB_USER,
+                "-d", DB_NAME,
                 "--no-owner",
                 "--no-privileges",
                 "--inserts",
                 "--quote-all-identifiers"  # 👈 ensures "User" is preserved
-            ], check=True, env={"PGPASSWORD": "brewpass"}, stdout=f_out)
+            ], check=True, env=_postgres_env(), stdout=f_out)
 
         flash("Export completed successfully.", "success")
         return send_file(backup_path, as_attachment=True)
@@ -207,6 +231,8 @@ def import_db():
     return redirect(url_for('routes.admin_bp.import_status_page'))
 
 @admin_bp.route('/import-status')
+@login_required
+@role_required('admin')
 def import_status():
     status = _read_import_status()
     return jsonify(status or {"status": "idle", "message": "No import running"})
@@ -232,18 +258,17 @@ def _start_background_import(sql_path):
 
     def worker():
         with app.app_context():
-            env = os.environ.copy()
-            env["PGPASSWORD"] = env.get("PGPASSWORD", "brewpass")
+            env = _postgres_env()
             try:
                 _write_import_status("running", "Dropping schema…")
                 subprocess.run(
-                    ["psql", "-h", "db", "-U", "brewuser", "-d", "brewweb", "-c", "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"],
+                    ["psql", "-h", DB_HOST, "-U", DB_USER, "-d", DB_NAME, "-c", "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"],
                     check=True,
                     env=env,
                 )
                 _write_import_status("running", "Importing SQL…")
                 import_run = subprocess.run(
-                    ["psql", "-h", "db", "-U", "brewuser", "-d", "brewweb", "-f", sql_path],
+                    ["psql", "-h", DB_HOST, "-U", DB_USER, "-d", DB_NAME, "-f", sql_path],
                     check=False,
                     env=env,
                 )
@@ -308,9 +333,9 @@ def _stamp_head_with_fallback(env):
     # Fallback: manually set alembic_version to local latest revision or known revision id
     rev = _latest_local_revision() or "d00abd51392a"
     try:
-        db.session.execute("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) NOT NULL);")
-        db.session.execute("DELETE FROM alembic_version;")
-        db.session.execute("INSERT INTO alembic_version (version_num) VALUES (:rev)", {"rev": rev})
+        db.session.execute(text("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) NOT NULL);"))
+        db.session.execute(text("DELETE FROM alembic_version;"))
+        db.session.execute(text("INSERT INTO alembic_version (version_num) VALUES (:rev)"), {"rev": rev})
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -412,7 +437,14 @@ def _apply_schema_fixes(env):
     commands.extend([
         "ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS unit_preference VARCHAR(10) DEFAULT 'imperial';",
         "ALTER TABLE recipe ADD COLUMN IF NOT EXISTS yeast_id INTEGER;",
-        "ALTER TABLE recipe ADD CONSTRAINT IF NOT EXISTS recipe_yeast_id_fkey FOREIGN KEY (yeast_id) REFERENCES yeast(id);",
+        """
+        DO $$ BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'recipe_yeast_id_fkey') THEN
+                ALTER TABLE recipe ADD CONSTRAINT recipe_yeast_id_fkey
+                    FOREIGN KEY (yeast_id) REFERENCES yeast(id);
+            END IF;
+        END $$;
+        """,
         "ALTER TABLE batch ADD COLUMN IF NOT EXISTS batch_size FLOAT;",
         "ALTER TABLE batch ADD COLUMN IF NOT EXISTS fermentation_temp VARCHAR(50);",
         "ALTER TABLE batch ADD COLUMN IF NOT EXISTS initial_gravity FLOAT;",
@@ -429,7 +461,14 @@ def _apply_schema_fixes(env):
         "ALTER TABLE batch ADD COLUMN IF NOT EXISTS tosna_per_day FLOAT;",
         "ALTER TABLE batch ADD COLUMN IF NOT EXISTS tosna_enabled BOOLEAN;",
         "ALTER TABLE batch ADD COLUMN IF NOT EXISTS yeast_id INTEGER;",
-        "ALTER TABLE batch ADD CONSTRAINT IF NOT EXISTS batch_yeast_id_fkey FOREIGN KEY (yeast_id) REFERENCES yeast(id);",
+        """
+        DO $$ BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'batch_yeast_id_fkey') THEN
+                ALTER TABLE batch ADD CONSTRAINT batch_yeast_id_fkey
+                    FOREIGN KEY (yeast_id) REFERENCES yeast(id);
+            END IF;
+        END $$;
+        """,
         "ALTER TABLE ingredient ADD COLUMN IF NOT EXISTS amount_per_gallon FLOAT;",
         "ALTER TABLE ingredient ADD COLUMN IF NOT EXISTS unit VARCHAR(20);",
         "ALTER TABLE ingredient ADD COLUMN IF NOT EXISTS note VARCHAR(200);",
@@ -439,7 +478,7 @@ def _apply_schema_fixes(env):
 
     for cmd in commands:
         subprocess.run(
-            ["psql", "-h", "db", "-U", "brewuser", "-d", "brewweb", "-c", cmd],
+            ["psql", "-h", DB_HOST, "-U", DB_USER, "-d", DB_NAME, "-c", cmd],
             check=False,
             env=env,
         )

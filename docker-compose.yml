@@ -1,51 +1,77 @@
-version: "3.9"
+name: brewweb-docker
 
 services:
   web:
-    build: .
-    env_file: .env
+    build:
+      context: .
+    image: ${BREWWEB_IMAGE:-ghcr.io/anndrox/brew-web:latest}
+    restart: unless-stopped
+    init: true
     ports:
-      - "4452:4452"  # External:Internal
+      - "${BREWWEB_BIND:-127.0.0.1}:${BREWWEB_PORT:-4452}:4452"
     environment:
-      TZ: America/New_York
-      FLASK_ENV: production
-      SECRET_KEY: ${SECRET_KEY}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://brewuser:brewpass@db:5432/brewweb}  # Internal DB access
+      TZ: ${TZ:-America/New_York}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env before starting Brew-Web}
+      POSTGRES_HOST: db
+      POSTGRES_USER: ${POSTGRES_USER:-brewuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-brewweb}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      RATELIMIT_STORAGE_URI: ${RATELIMIT_STORAGE_URI:-memory://}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-1}
     depends_on:
       db:
-        condition: service_healthy  # ✅ Wait until DB is healthy
+        condition: service_healthy
     volumes:
       - ./instance:/app/instance
       - ./logs:/app/logs
       - ./backups:/app/backups
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
 
   db:
-    image: postgres:15
-    restart: always
-    ports:
-      - "5544:5432"  # Expose externally on 5544
+    image: postgres:15-alpine@sha256:fe0737ba566a2c5b2a28f34433c0a423261900ec17b9bf7ad115e1aae7e57f1b
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: brewuser
-      POSTGRES_PASSWORD: brewpass
-      POSTGRES_DB: brewweb
+      POSTGRES_USER: ${POSTGRES_USER:-brewuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-brewweb}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5544}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "brewuser", "-d", "postgres"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
-      retries: 5
-      
+      retries: 10
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+
   export:
-    image: postgres:15
+    image: postgres:15-alpine@sha256:fe0737ba566a2c5b2a28f34433c0a423261900ec17b9bf7ad115e1aae7e57f1b
+    profiles: ["tools"]
+    restart: "no"
     depends_on:
-      - db
-    entrypoint: /bin/sh
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-brewuser}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      PGDATABASE: ${POSTGRES_DB:-brewweb}
     volumes:
       - ./backups:/backups
-    command: -c 'pg_dump -U brewuser -h db -d brewweb --no-owner --no-privileges --inserts -f /backups/manual_backup.sql'
-    environment:
-      PGPASSWORD: brewpass
+    command:
+      - sh
+      - -c
+      - pg_dump --no-owner --no-privileges --format=custom --file=/backups/manual_backup.dump
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   pgdata:

@@ -1,24 +1,11 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
-echo "🛑 Stopping and removing Docker containers..."
-docker-compose down --volumes --remove-orphans
+# Project-scoped cleanup. Database volumes and backups are preserved.
+docker compose down --remove-orphans
 
-echo "🧹 Pruning unused Docker objects..."
-docker system prune -f
+find ./app ./tests -type f \( -name '*.pyc' -o -name '*.pyo' -o -name '*.pyd' \) -delete 2>/dev/null || true
+find ./app ./tests -type d -name '__pycache__' -empty -delete 2>/dev/null || true
 
-echo "🧹 Removing stale build cache and volumes..."
-docker builder prune --all --force
-docker volume prune --force
-
-echo "🧼 Removing Python cache files and directories..."
-find ./app -name "*.pyc" -delete
-find ./app -name "__pycache__" -type d -exec rm -rf {} +
-
-echo "📁 Forcibly removing backups/, logs/, migrations/..."
-rm -rf ./backups ./logs ./migrations
-
-echo "🧼 Removing Jinja template cache if any..."
-find ./app -name "*.pyo" -delete
-find ./app -name "*.pyd" -delete
-
-echo "🔧 Ready for clean rebuild."
+printf '%s\n' 'Brew-Web containers stopped and local Python caches removed.'
+printf '%s\n' 'Database volumes, backups, logs, and unrelated Docker resources were preserved.'

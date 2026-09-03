@@ -1,5 +1,31 @@
 # Brew-Web Changelog
 
+## [Unreleased]
+
+### Added
+
+- CI across Python 3.11 and 3.13, dependency auditing, CodeQL analysis, and GHCR publishing.
+- Dependabot configuration, issue forms, pull request template, CODEOWNERS, contribution guide,
+  code of conduct, and security policy.
+- A committed Alembic baseline and a compatibility path for existing v1.4 databases.
+- Health check and regression tests for setup, recovery, password policy, and login throttling.
+
+### Changed
+
+- Pinned production and development dependencies for reproducible builds.
+- Hardened the Docker image and Compose stack with a non-root user, read-only filesystem,
+  localhost-only ports, required secrets, and project-scoped cleanup.
+- Parameterized all PostgreSQL commands and replaced dynamic startup migrations with reviewed,
+  committed migrations.
+- Reworked installation, upgrade, backup, security, and development documentation.
+
+### Fixed
+
+- Protected password recovery and import status endpoints from unauthenticated access.
+- Restored the CSRF token in the recovery form and enabled login rate limiting.
+- Fixed metric recipe conversion and persisted calculated ABV for new batches.
+- Validated backup filenames and corrected legacy foreign-key repair SQL.
+
 ## [v1.4.0] - 2026-03-21
 ### Added
 - Added flocculation and attenuation fields to yeast model
