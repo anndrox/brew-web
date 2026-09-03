@@ -17,6 +17,7 @@ container with PostgreSQL and is designed to sit behind an HTTPS reverse proxy.
 - Role-based accounts for administrators, editors, and users
 - PostgreSQL backup and restore from the administration page
 - Versioned database migrations and automatic startup upgrades
+- CSRF-protected calendar changes and browser security headers
 
 ## Quick start
 
@@ -39,6 +40,10 @@ docker compose ps
 
 Open <http://localhost:4452/setup> and create the first administrator. The default
 configuration binds Brew-Web and PostgreSQL to localhost only.
+
+Application responses include content-type, framing, referrer, permissions, and
+content-security protections. When publishing through HTTPS, configure HSTS at
+the reverse proxy and set `SESSION_COOKIE_SECURE=true`.
 
 To build the current source instead of using the published image:
 

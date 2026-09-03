@@ -70,7 +70,7 @@ def new_measurement():
 @login_required
 @role_required('admin')
 def delete_measurement(measurement_id):
-    measurement = Measurement.query.get_or_404(measurement_id)
+    measurement = db.get_or_404(Measurement, measurement_id)
     batch_id = measurement.batch_id
     db.session.delete(measurement)
     db.session.commit()

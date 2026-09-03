@@ -50,7 +50,7 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        return db.session.get(User, int(user_id))
 
     @app.before_request
     def require_setup():
@@ -102,9 +102,6 @@ def create_app():
     def nl2br_filter(s):
         return Markup('<br>'.join(escape(s).splitlines()))
 
-    from .routes_calculators import calculator_bp
-    app.register_blueprint(calculator_bp)
-
     from . import routes
     app.register_blueprint(routes.routes)
 
@@ -139,8 +136,35 @@ def create_app():
         app.logger.addHandler(file_handler)
     app.logger.setLevel(logging.INFO)
 
-    app.logger.info('✅ Application startup')
-    app.logger.info(f'✅ Brew Web v{Config.VERSION} started')
+    app.logger.info('Application startup')
+    app.logger.info('Brew Web v%s started', Config.VERSION)
+
+    @app.after_request
+    def add_security_headers(response):
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+        response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+        response.headers.setdefault(
+            'Permissions-Policy',
+            'camera=(), geolocation=(), microphone=()',
+        )
+        response.headers.setdefault(
+            'Content-Security-Policy',
+            "default-src 'self'; "
+            "base-uri 'self'; "
+            "connect-src 'self'; "
+            "font-src 'self' https://cdn.quilljs.com; "
+            "form-action 'self'; "
+            "frame-ancestors 'self'; "
+            "img-src 'self' data:; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net "
+            "https://cdn.quilljs.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net "
+            "https://cdn.quilljs.com",
+        )
+        if current_user.is_authenticated:
+            response.headers.setdefault('Cache-Control', 'no-store')
+        return response
 
     # --- Error Handlers ---
     def log_error_and_render(error, template, code):

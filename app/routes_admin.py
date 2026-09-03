@@ -11,7 +11,7 @@ from sqlalchemy.exc import ProgrammingError
 from .models import db, User, AppSettings
 from app.decorators import role_required
 from app.utils import is_strong_password, check_for_updates, read_import_status_file
-from datetime import datetime
+from datetime import UTC, datetime
 import re
 
 BACKUP_FOLDER = os.path.join(os.getcwd(), "backups")
@@ -107,7 +107,7 @@ def delete_user(user_id):
         flash("Cannot delete your own account.", "danger")
         return redirect(url_for('routes.admin_bp.admin_settings'))
 
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
     db.session.delete(user)
     db.session.commit()
     flash("User deleted.", "success")
@@ -117,7 +117,7 @@ def delete_user(user_id):
 @login_required
 @role_required('admin')
 def update_password(user_id):
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
     new_pw = request.form.get('password')
     if not is_strong_password(new_pw):
         flash('Use at least 8 characters with upper- and lowercase letters, a number, and a symbol.', 'danger')
@@ -295,7 +295,7 @@ def _write_import_status(status, message):
             json.dump({
                 "status": status,
                 "message": message,
-                "updated_at": datetime.utcnow().isoformat() + "Z"
+                "updated_at": datetime.now(UTC).isoformat().replace('+00:00', 'Z')
             }, f)
     except Exception:
         pass

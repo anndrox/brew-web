@@ -15,5 +15,5 @@
 <h3>Notes</h3>
 <pre style="white-space: pre-wrap;">{{ recipe.notes }}</pre>
 <a href="{{ url_for('routes.recipes_bp.edit_recipe', recipe_id=recipe.id) }}">Edit Recipe</a>
-<a href="{{ url_for('routes.recipes_bp.index') }}">Back</a>
+<a href="{{ url_for('routes.index') }}">Back</a>
 {% endblock %}

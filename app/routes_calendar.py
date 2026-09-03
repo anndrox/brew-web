@@ -3,7 +3,6 @@ from flask_login import login_required, current_user
 from datetime import datetime
 from .models import db, Batch, CalendarEvent
 from app.decorators import role_required
-from app import csrf  # For csrf.exempt
 
 calendar_bp = Blueprint('calendar_bp', __name__)
 
@@ -54,7 +53,6 @@ def calendar_events():
     return jsonify(events)
 
 @calendar_bp.route('/calendar-event', methods=['POST'])
-@csrf.exempt
 @login_required
 @role_required('admin', 'editor')
 def create_calendar_event():
@@ -72,11 +70,10 @@ def create_calendar_event():
     return jsonify(success=True)
 
 @calendar_bp.route('/calendar-event/<int:event_id>', methods=['PUT'])
-@csrf.exempt
 @login_required
 @role_required('admin', 'editor')
 def update_calendar_event(event_id):
-    event = CalendarEvent.query.get_or_404(event_id)
+    event = db.get_or_404(CalendarEvent, event_id)
     data = request.get_json()
     event.title = data.get('title')
     event.start = datetime.strptime(data.get('start'), '%Y-%m-%d')
@@ -86,11 +83,10 @@ def update_calendar_event(event_id):
     return jsonify(success=True)
 
 @calendar_bp.route('/calendar-event/<int:event_id>', methods=['DELETE'])
-@csrf.exempt
 @login_required
 @role_required('admin')
 def delete_calendar_event(event_id):
-    event = CalendarEvent.query.get_or_404(event_id)
+    event = db.get_or_404(CalendarEvent, event_id)
     db.session.delete(event)
     db.session.commit()
     return jsonify(success=True)
