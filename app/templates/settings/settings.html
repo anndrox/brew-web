@@ -3,7 +3,7 @@
 {% block content %}
 <div style="display: flex; min-height: 80vh;">
     <!-- Sidebar -->
-    {% include "settings/_sidebar.html" %}
+    {% include "settings/settings/_sidebar.html" %}
 		{% if update_info.update_available %}
 		  <div style="color: orange;">
 			🔔 New version available: <strong>{{ update_info.latest }}</strong><br>

@@ -8,17 +8,7 @@ recipes_bp = Blueprint("recipes_bp", __name__)
 @recipes_bp.route('/recipes')
 @login_required
 def recipes():
-    return redirect(url_for('routes.recipes_bp.index'))
-
-@recipes_bp.route('/')
-@login_required
-def index():
-    mead_recipes = Recipe.query.filter_by(alcohol_type='Mead').order_by(Recipe.name.asc()).all()
-    wine_recipes = Recipe.query.filter_by(alcohol_type='Wine').order_by(Recipe.name.asc()).all()
-    beer_recipes = Recipe.query.filter_by(alcohol_type='Beer').order_by(Recipe.name.asc()).all()
-    other_recipes = Recipe.query.filter(Recipe.alcohol_type.is_(None)).order_by(Recipe.name.asc()).all()
-    return render_template('index.html', mead_recipes=mead_recipes, wine_recipes=wine_recipes,
-                           beer_recipes=beer_recipes, other_recipes=other_recipes)
+    return redirect(url_for('routes.index'))
 
 @recipes_bp.route('/recipes/new', methods=['GET', 'POST'])
 @login_required
@@ -59,7 +49,7 @@ def new_recipe():
 
         db.session.commit()
         flash("New recipe with ingredients added.", "success")
-        return redirect(url_for('routes.recipes_bp.index'))
+        return redirect(url_for('routes.index'))
 
     yeasts = Yeast.query.order_by(Yeast.name).all()
     units = get_unit_preference()
@@ -69,7 +59,7 @@ def new_recipe():
 @recipes_bp.route('/recipes/<int:recipe_id>')
 @login_required
 def view_recipe(recipe_id):
-    recipe = Recipe.query.get_or_404(recipe_id)
+    recipe = db.get_or_404(Recipe, recipe_id)
     units = get_unit_preference()
     target_batch = request.args.get('target_batch', type=float, default=1)
     display_unit = 'liter' if units == 'metric' else 'gallon'
@@ -110,7 +100,7 @@ def view_recipe(recipe_id):
 @login_required
 @role_required('admin', 'editor')
 def edit_recipe(recipe_id):
-    recipe = Recipe.query.get_or_404(recipe_id)
+    recipe = db.get_or_404(Recipe, recipe_id)
     if request.method == 'POST':
         units = get_unit_preference()
         display_unit = 'liter' if units == 'metric' else 'gallon'
@@ -153,8 +143,8 @@ def edit_recipe(recipe_id):
 @login_required
 @role_required('admin')
 def delete_recipe(recipe_id):
-    recipe = Recipe.query.get_or_404(recipe_id)
+    recipe = db.get_or_404(Recipe, recipe_id)
     db.session.delete(recipe)
     db.session.commit()
     flash(f'Recipe \"{recipe.name}\" was deleted.', 'success')
-    return redirect(url_for('routes.recipes_bp.index'))
+    return redirect(url_for('routes.index'))

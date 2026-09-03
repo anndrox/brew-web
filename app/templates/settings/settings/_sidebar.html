@@ -5,14 +5,14 @@
     <ul style="list-style: none; padding: 0; margin: 0;">
       {% if current_user.role == 'admin' %}
       <li style="margin-bottom: 10px;">
-        <a href="{{ url_for('routes.admin_settings') }}" {% if 'admin_settings' in active %}style="font-weight: bold;"{% endif %}>🛠️ Administration</a>
+        <a href="{{ url_for('routes.admin_bp.admin_settings') }}" {% if request.endpoint == 'routes.admin_bp.admin_settings' %}style="font-weight: bold;"{% endif %}>🛠️ Administration</a>
       </li>
       {% endif %}
       <li style="margin-bottom: 10px;">
-        <a href="{{ url_for('routes.settings_customize') }}" {% if 'settings_customize' in active %}style="font-weight: bold;"{% endif %}>🎨 Customize</a>
+        <a href="{{ url_for('routes.settings_bp.settings_customize') }}" {% if request.endpoint == 'routes.settings_bp.settings_customize' %}style="font-weight: bold;"{% endif %}>🎨 Customize</a>
       </li>
       <li>
-        <a href="{{ url_for('routes.settings_password') }}" {% if 'settings_password' in active %}style="font-weight: bold;"{% endif %}>🔑 Change Password</a>
+        <a href="{{ url_for('routes.settings_bp.settings_password') }}" {% if request.endpoint == 'routes.settings_bp.settings_password' %}style="font-weight: bold;"{% endif %}>🔑 Change Password</a>
       </li>
     </ul>
   </div>

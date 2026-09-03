@@ -106,7 +106,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     await fetch(url, {
       method: method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
       body: JSON.stringify(data)
     });
 
@@ -117,7 +120,10 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('deleteBtn').addEventListener('click', async function () {
     const id = document.getElementById('event_id').value;
     if (id && confirm('Delete this event?')) {
-      await fetch(`/app/calendar-event/${id}`, { method: 'DELETE' });
+      await fetch(`/app/calendar-event/${id}`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+      });
       closeModal();
       calendar.refetchEvents();
     }

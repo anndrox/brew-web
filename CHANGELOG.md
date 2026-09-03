@@ -25,6 +25,11 @@
 - Restored the CSRF token in the recovery form and enabled login rate limiting.
 - Fixed metric recipe conversion and persisted calculated ABV for new batches.
 - Validated backup filenames and corrected legacy foreign-key repair SQL.
+- Repaired the settings landing page and nested settings navigation endpoints.
+- Fixed TOSNA calendar creation, day numbering, and cross-database batch date parsing.
+- Removed duplicate calculator route registration and repaired calculator index links.
+- Restored multi-category default yeasts without name-only deduplication.
+- Protected calendar mutations with CSRF tokens and added browser security headers.
 
 ## [v1.4.0] - 2026-03-21
 ### Added
