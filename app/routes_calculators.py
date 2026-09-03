@@ -21,7 +21,7 @@ def calculator_abv():
             og = float(request.form['og'])
             fg = float(request.form['fg'])
             result = round((og - fg) * 131.25, 2)
-        except:
+        except (KeyError, TypeError, ValueError):
             result = None
     return render_template("calculators/abv.html", result=result, unit_preference=units)
 
@@ -83,7 +83,7 @@ def calculator_dilution():
                 added_water = round(gallons_to_liters(added_water_gal) if units == 'metric' else added_water_gal, 2)
                 unit_label = "liters" if units == 'metric' else "gallons"
                 result = f"Add {added_water} {unit_label} of water."
-        except:
+        except (KeyError, TypeError, ValueError):
             result = "Invalid input"
     return render_template("calculators/dilution.html", result=result, unit_preference=units)
 
@@ -119,7 +119,7 @@ def calculator_volume_recovery():
                     "unit": "gallons",
                     "honey_unit": "lb"
                 }
-        except:
+        except (KeyError, TypeError, ValueError):
             result = None
     return render_template("calculators/volume_recovery.html", result=result, unit_preference=units)
 
@@ -139,7 +139,7 @@ def calculator_honey_needed():
                 result = {"amount": round(honey_lb * 0.453592, 2), "unit": "kg"}
             else:
                 result = {"amount": honey_lb, "unit": "lb"}
-        except:
+        except (KeyError, TypeError, ValueError):
             result = "Invalid input"
     return render_template("calculators/honey_required.html", result=result, unit_preference=units)
 
@@ -161,7 +161,7 @@ def calculator_sweetness():
                 result = {"amount": round(honey_lb * 0.453592, 2), "unit": "kg"}
             else:
                 result = {"amount": honey_lb, "unit": "lb"}
-        except:
+        except (KeyError, TypeError, ValueError):
             result = None
     return render_template("calculators/sweetness.html", result=result, unit_preference=units)
 
@@ -180,7 +180,7 @@ def calculator_carbonation():
                 result = {"amount": round(sugar_oz * 28.3495, 2), "unit": "grams"}
             else:
                 result = {"amount": sugar_oz, "unit": "oz"}
-        except:
+        except (KeyError, TypeError, ValueError):
             result = "Invalid input"
     return render_template("calculators/carbonation.html", result=result, unit_preference=units)
 
@@ -221,6 +221,6 @@ def calculator_temp_correction():
             correction = (temp_f - 60) * 0.001
             corrected = round(observed + correction, 3)
             result = corrected
-        except:
+        except (KeyError, TypeError, ValueError):
             result = None
     return render_template("calculators/temp_correction.html", result=result, unit_preference=units)

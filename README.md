@@ -1,112 +1,116 @@
 # Brew-Web
 
-[![Version](https://img.shields.io/badge/version-v1.4.0-blue)](#)
-[![Docker](https://img.shields.io/badge/built%20with-Docker-blue)](#)
-[![Flask](https://img.shields.io/badge/framework-Flask-yellow)](#)
-[![License](https://img.shields.io/badge/license-MIT-green)](#)
-[![Status](https://img.shields.io/badge/status-stable-brightgreen)](#)
+[![CI](https://github.com/anndrox/brew-web/actions/workflows/ci.yml/badge.svg)](https://github.com/anndrox/brew-web/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/anndrox/brew-web/actions/workflows/codeql.yml/badge.svg)](https://github.com/anndrox/brew-web/actions/workflows/codeql.yml)
+[![GitHub release](https://img.shields.io/github/v/release/anndrox/brew-web)](https://github.com/anndrox/brew-web/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Self-hosted web app for managing mead brewing recipes, batches, and calculators.
-
----
-
-## Quick Start
-
-[![Docker Compose](https://img.shields.io/badge/Setup-Docker%20Compose-informational)](#)
-
-### Requirements
-- Docker and Docker Compose
-- `.env` in the project root (copy `.env.example`) with `SECRET_KEY` set
-- **Before upgrading:** create a fresh SQL backup from `/settings/admin` (Export). The importer rewrites schemas and reseeds data to support old dumps, so keep a rollback handy.
-
-### Installation
-```bash
-wget https://github.com/anndrox/brew-web/raw/main/brew-web.zip
-
-unzip brew-web.zip -d .
-cd brew-web
-
-cp .env.example .env
-$EDITOR .env   # set SECRET_KEY
-
-docker compose up -d --build
-```
-Access at http://localhost:4452
-
-> Imports from older backups now run schema repairs and yeast seeding automatically; no manual steps needed.
-
----
-
-## Authentication & Security
-- Run `/setup` on first start.
-- Admin/user management via `/settings/admin`.
-- Force password reset: create `/instance/force_reset.flag`.
-- Keep behind TLS proxy; don’t expose 4452 directly.
-- Store secrets only in `.env`; rotate `SECRET_KEY` for production.
-- CSRF and login protection are enabled by default.
-
----
+Brew-Web is a self-hosted Flask application for managing brewing recipes, batches,
+measurements, yeast references, calendars, and calculators. It runs as a non-root
+container with PostgreSQL and is designed to sit behind an HTTPS reverse proxy.
 
 ## Features
-- ✓ Recipe scaling with structured ingredients
-- ✓ Batch logging with gravities, honey, and notes
-- ✓ Built-in brewing calculators:
-  - ABV, **Target ABV**, TOSNA, dilution, sweetness, carbonation, temp correction, volume recovery, honey required
-- ✓ Yeast reference guide
-- ✓ Batch calendar tracker
-- ✓ Role-based admin management
-- ✓ Full PostgreSQL backup & restore
-- ✓ Settings: theme, font, security
-- ✓ Global unit preference (imperial/metric); recipes, forms, and calculators honor it
 
----
+- Recipe and ingredient scaling with imperial or metric units
+- Batch tracking, gravity measurements, ABV, TOSNA, and calendar events
+- Mead, wine, beer, and cider calculators
+- Role-based accounts for administrators, editors, and users
+- PostgreSQL backup and restore from the administration page
+- Versioned database migrations and automatic startup upgrades
 
-## Backup & Restore
-[![Database](https://img.shields.io/badge/PostgreSQL-Export%2FImport-success)](#)
+## Quick start
 
-- **Export:** `/export-db` (admin) → saves to `/backups`
-- **Import:** upload `.sql` via `/settings/admin`; runs in background with status page. Schema fixes and yeast reseed run automatically, even if Alembic revisions are missing.
-- **Always export before upgrading** so you can roll back quickly.
-- Safe for `docker compose down -v && up --build` cycles.
+Requirements: Git, Docker Engine or Docker Desktop, and Docker Compose v2.
 
----
+```bash
+git clone https://github.com/anndrox/brew-web.git
+cd brew-web
+cp .env.example .env
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Put two different generated values into `SECRET_KEY` and `POSTGRES_PASSWORD` in
+`.env`, then start the application:
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+Open <http://localhost:4452/setup> and create the first administrator. The default
+configuration binds Brew-Web and PostgreSQL to localhost only.
+
+To build the current source instead of using the published image:
+
+```bash
+docker compose up -d --build
+```
 
 ## Configuration
-[![Configurable](https://img.shields.io/badge/Config-.env%20%2B%20docker--compose.yml-yellow)](#)
 
-Key env:
-```env
-SECRET_KEY=changeme-in-production
+Copy `.env.example` to `.env`; `.env` is intentionally ignored by Git.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SECRET_KEY` | required | Flask session and CSRF signing secret |
+| `POSTGRES_PASSWORD` | required | PostgreSQL password |
+| `POSTGRES_USER` | `brewuser` | PostgreSQL user |
+| `POSTGRES_DB` | `brewweb` | PostgreSQL database |
+| `BREWWEB_BIND` | `127.0.0.1` | Host interface for the web port |
+| `BREWWEB_PORT` | `4452` | Host web port |
+| `POSTGRES_PORT` | `5544` | Local PostgreSQL port |
+| `SESSION_COOKIE_SECURE` | `false` | Set to `true` when served exclusively over HTTPS |
+| `BREWWEB_IMAGE` | `ghcr.io/anndrox/brew-web:latest` | Container image or local tag |
+| `RATELIMIT_STORAGE_URI` | `memory://` | Shared Flask-Limiter storage when using multiple workers |
+
+Runtime data is stored in the `pgdata` Docker volume and the local `instance/`,
+`logs/`, and `backups/` directories. Do not commit any of those contents.
+
+## Upgrading and backups
+
+Create and download a backup from **Settings → Administration** before every
+upgrade. A manual custom-format backup can also be created with:
+
+```bash
+docker compose --profile tools run --rm export
 ```
 
----
+Then update and restart:
 
-## Project Structure
-[![Structure](https://img.shields.io/badge/Folder%20Layout-Described-lightgrey)](#)
-```
-brew-web/
-├─ app/
-│  ├─ templates/
-│  ├─ static/
-│  ├─ routes/
-│  └─ models.py
-├─ backups/
-├─ config.py
-├─ docker-compose.yml
-├─ Dockerfile
-└─ README.md
+```bash
+git pull --ff-only
+docker compose pull
+docker compose up -d
 ```
 
----
+Committed Alembic migrations are applied automatically. Existing unversioned v1.4
+databases receive a one-time compatibility repair before being marked at the
+baseline. `docker compose down` preserves data; do not add `--volumes` unless you
+intentionally want to erase the database.
 
-## Dev Tips
-- Reset environment:
-  ```bash
-  docker compose down -v && docker compose up --build
-  ```
-- Customize UI: edit `base.html`, `admin.html`, `static/style.css`
-- Logs: `/logs/brewweb.log`
+## Development
 
----
+```bash
+python -m venv .venv
+# Activate .venv using the command for your shell
+python -m pip install -r requirements-dev.txt
+ruff check .
+python -m pytest
+pip-audit -r requirements.txt
+docker compose config --quiet
+docker build -t brewweb:dev .
+```
 
-Recent maintenance and import hardening provided with assistance from Codex.
+Changes should be made on a branch and submitted through a pull request. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [SECURITY.md](SECURITY.md)
+for private vulnerability reporting.
+
+## Recovery password reset
+
+Create `instance/force_reset.flag`, restart the web container, and visit `/reset`.
+Remove the flag after the administrator password has been changed. Keep filesystem
+access to `instance/` restricted because this flow grants account recovery.
+
+## License
+
+Brew-Web is available under the [MIT License](LICENSE).

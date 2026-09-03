@@ -2,7 +2,6 @@ from flask import Blueprint, render_template
 from flask_login import login_required
 from .models import Batch
 from sqlalchemy import func
-from datetime import datetime
 
 stats_bp = Blueprint('stats_bp', __name__, url_prefix='/stats')
 
