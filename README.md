@@ -23,6 +23,11 @@ container with PostgreSQL and is designed to sit behind an HTTPS reverse proxy.
 
 Requirements: Git, Docker Engine or Docker Desktop, and Docker Compose v2.
 
+The public prebuilt image is available from
+[GitHub Container Registry](https://github.com/anndrox/brew-web/pkgs/container/brew-web).
+No registry login or local image build is required. The current image supports
+`linux/amd64` (x86-64); ARM64 users should build from source.
+
 ```bash
 git clone https://github.com/anndrox/brew-web.git
 cd brew-web
@@ -34,7 +39,8 @@ Put two different generated values into `SECRET_KEY` and `POSTGRES_PASSWORD` in
 `.env`, then start the application:
 
 ```bash
-docker compose up -d
+docker compose pull web db
+docker compose up -d --no-build
 docker compose ps
 ```
 
@@ -45,7 +51,12 @@ Application responses include content-type, framing, referrer, permissions, and
 content-security protections. When publishing through HTTPS, configure HSTS at
 the reverse proxy and set `SESSION_COOKIE_SECURE=true`.
 
-To build the current source instead of using the published image:
+To pin the verified v1.4.0 release, set `BREWWEB_IMAGE=ghcr.io/anndrox/brew-web:1.4.0`
+in `.env`. The default `latest` tag follows published releases. See
+[release validation and maintainer instructions](docs/releases.md) for the immutable digest.
+
+To build the current source instead of using the published image, set
+`BREWWEB_IMAGE=brewweb:local` in `.env`, then run:
 
 ```bash
 docker compose up -d --build
@@ -84,8 +95,8 @@ Then update and restart:
 
 ```bash
 git pull --ff-only
-docker compose pull
-docker compose up -d
+docker compose pull web db
+docker compose up -d --no-build
 ```
 
 Committed Alembic migrations are applied automatically. Existing unversioned v1.4
