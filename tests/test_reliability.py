@@ -1,4 +1,5 @@
 import io
+import hashlib
 import re
 from pathlib import Path
 from unittest.mock import Mock
@@ -232,3 +233,15 @@ def test_stats_with_dates_and_static_assets_are_local(app, client):
             assert b'chart.umd' not in page.data
         for asset in re.findall(rb'(?:src|href)="(/static/vendor/[^"]+)"', page.data):
             assert client.get(asset.decode()).status_code == 200
+
+
+def test_bundled_vendor_assets_match_documented_hashes():
+    root = Path(__file__).resolve().parent.parent / 'app/static/vendor'
+    expected = {
+        'chartjs-4.5.1/chart.umd.min.js': '48444a82d4edcb5bec0f1965faacdde18d9c17db3063d042abada2f705c9f54a',
+        'fullcalendar-6.1.20/index.global.min.js': 'b101204ba23e14478e957e284d58bba96fc7311021d0eeaf89fa5e65720c46c8',
+        'quill-2.0.3/quill.js': 'f6157c72ac9b3f51cdead426335688a027b12405d9d6a4daadd38a676b2d7ff2',
+        'quill-2.0.3/quill.snow.css': '1c7948cd13aa92fac6390319bc1e5e461823da171519d3a768db56164f871636',
+    }
+    for filename, digest in expected.items():
+        assert hashlib.sha256((root / filename).read_bytes()).hexdigest() == digest

@@ -6,3 +6,6 @@ Dockerfile text eol=lf
 *.yaml text eol=lf
 *.py text eol=lf
 *.md text eol=lf
+
+# Preserve exact upstream bytes for pinned/licensed browser dependencies.
+app/static/vendor/** -text

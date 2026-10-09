@@ -49,6 +49,7 @@ def run():
                 page.locator('[name=confirm_password]').fill('Browser1!Password')
                 page.get_by_role('button', name='Create Admin Account').click()
                 page.wait_for_url('**/app/')
+                page.get_by_role('link', name='Settings').click()
                 page.get_by_role('button', name='Logout').click()
                 page.wait_for_url('**/login')
                 page.locator('[name=username]').fill('browser-admin')
