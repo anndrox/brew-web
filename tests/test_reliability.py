@@ -76,6 +76,24 @@ def test_instructions_sanitize_old_rows_without_rewriting_storage(app, client):
     assert sanitize_instructions(None) == ''
 
 
+@pytest.mark.parametrize('payload', [
+    '<span></span><img src=x onerror="alert(1)">',
+    '<a href="https://example.test" onmouseover="alert(1)">Injected video export</a>',
+    '<iframe src="https://example.test"></iframe><span class="ql-formula" data-value="unsafe">Formula</span>',
+])
+def test_quill_export_advisory_payloads_are_sanitized_on_save_and_display(app, client, payload):
+    login_as(client, create_admin(app))
+    response = client.post('/app/recipes/new', data={'name': 'Export payload', 'content': payload})
+    assert response.status_code == 302
+    with app.app_context():
+        recipe = Recipe.query.filter_by(name='Export payload').one()
+        content, recipe_id = recipe.content, recipe.id
+        for forbidden in ('onerror', 'onmouseover', '<img', '<iframe', 'ql-formula', 'data-value'):
+            assert forbidden not in content
+    page = client.get(f'/app/recipes/{recipe_id}')
+    assert b'onmouseover=' not in page.data and b'onerror=' not in page.data
+
+
 def test_delete_recipe_csrf_and_viewer_controls(app, client):
     login_as(client, create_admin(app))
     with app.app_context():

@@ -43,9 +43,11 @@ def _submitted_recipe(units):
                 or len(row['unit']) > 20 or len(row['note']) > 200
                 or not math.isfinite(amount) or amount < 0):
             abort(400, 'Invalid ingredient row; existing ingredients were not changed.')
+        canonical_amount = per_liter_to_per_gallon(amount) if units == 'metric' else amount
+        if not math.isfinite(canonical_amount):
+            abort(400, 'Ingredient amount is too large.')
         ingredients.append({'name': row['name'], 'unit': row['unit'], 'note': row['note'],
-                            'amount_per_gallon': per_liter_to_per_gallon(amount)
-                            if units == 'metric' else amount})
+                            'amount_per_gallon': canonical_amount})
     return name, yeast_id, ingredients
 
 @recipes_bp.route('/recipes')

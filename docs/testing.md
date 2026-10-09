@@ -20,6 +20,9 @@ disposable data and test-only credentials.
 | Legacy values, hashes, IDs, relations, null volume and serial sequence safety | PostgreSQL upgrade matrix and container upgrade script |
 | Real inserts/COPY/custom pg_dump restore and invalid-restore rollback | PostgreSQL restore matrix, lock-conflict and original-revision assertions |
 | Correct volume reuse, preservation by down, missing-volume refusal | `tests/upgrade/verify_compose_volume.sh` |
+| Bounded connection wait refuses an unreachable database | Startup failure case in `verify_container_upgrade.sh` |
+| Bundled browser files match their documented immutable hashes | `test_bundled_vendor_assets_match_documented_hashes` |
+| Quill formula/video export payloads never render as executable markup | `test_quill_export_advisory_payloads_are_sanitized_on_save_and_display` and browser format/paste checks |
 
 See [compatibility](compatibility.md) for the supported schema profiles and
 [calculators](calculators.md) for formulas and operational limits.
@@ -46,6 +49,13 @@ The container job validates Compose, checks volume identity, builds the candidat
 without publishing, and proves published-v1.4.0 and unversioned database upgrade
 paths with a second candidate startup. Containers/networks/volumes are confined
 to the GitHub runner and cleaned up. CodeQL analyzes application Python.
+
+The PostgreSQL tests also preserve pooled connection settings across restore,
+and verify that a renamed sequence containing quotes is handled safely and is
+never moved backwards. The browser journey creates the first administrator,
+logs out/in, creates and edits rich-text recipes with bullet formatting, removes
+the first ingredient, adds a batch, renders charts and saves a calendar event
+with remote browser requests blocked.
 
 The publishing workflow now calls the same CI workflow and cannot access its
 registry publishing token until validation succeeds. It verifies the tag matches
@@ -77,3 +87,13 @@ If checks fail, a tag already exists, or unrelated/conflicting changes would be
 included, stop publication and report the owner decision needed. The local Codex
 scheduled task needs the computer powered on, the app running, and GitHub access.
 It is not a production deployment scheduler.
+
+## Dependency audit scope
+
+pip-audit checks Python production requirements. A separate npm audit of the
+three pinned browser packages reports Quill's known low-severity
+CVE-2025-15056; the application's mitigations and their tests are documented in
+[SECURITY.md](../SECURITY.md#bundled-editor-advisory). Do not silently suppress this
+finding, claim Quill is patched, or interpret an unflagged older version as proof
+of a fix. Review new browser advisories before publication and stop if a new
+finding is not covered by a reviewed mitigation or a compatible patched version.

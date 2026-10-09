@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 
 from alembic.script import ScriptDirectory
+from psycopg2 import sql
 from sqlalchemy import inspect, text
 
 BASELINE = 'eaf3a864a154'
@@ -90,12 +91,23 @@ def prepare_schema(connection):
         sequence = connection.execute(text('SELECT pg_get_serial_sequence(:table, :column)'),
                                       {'table': f'public."{name}"', 'column': 'id'}).scalar()
         if sequence:
-            # Names come only from the verified model/inspected PostgreSQL schema.
-            connection.exec_driver_sql(
-                f'SELECT setval(\'{sequence}\', GREATEST(COALESCE((SELECT MAX(id) FROM "{name}"), 1), '
-                f'(SELECT last_value FROM {sequence})), '
-                f'(SELECT is_called FROM {sequence}) OR EXISTS (SELECT 1 FROM "{name}"))'
-            )
+            sequence_schema, sequence_name = connection.execute(text(
+                'SELECT n.nspname, c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace '
+                'WHERE c.oid=CAST(:sequence AS regclass)'), {'sequence': sequence}).one()
+            cursor = connection.connection.driver_connection.cursor()
+            try:
+                cursor.execute(sql.SQL('SELECT last_value, is_called FROM {}').format(
+                    sql.Identifier(sequence_schema, sequence_name)))
+                last_value, is_called = cursor.fetchone()
+            finally:
+                cursor.close()
+            # Table name is from the verified allowlist; sequence names/values
+            # are safely quoted/bound even when an old sequence was renamed.
+            connection.execute(text(
+                f'SELECT setval(CAST(:sequence AS regclass), '
+                f'GREATEST(COALESCE((SELECT MAX(id) FROM "{name}"), 1), :last_value), '
+                f':is_called OR EXISTS (SELECT 1 FROM "{name}"))'
+            ), {'sequence': sequence, 'last_value': last_value, 'is_called': is_called})
 
 
 # Lexical splitting preserves quoted semicolons, dollar strings and nested

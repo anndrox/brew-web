@@ -60,6 +60,9 @@ def run():
                 page.goto(BASE + '/app/recipes/new')
                 page.locator('[name=name]').fill('Offline cider')
                 page.locator('[name=alcohol_type]').select_option('Hard Cider')
+                assert page.evaluate("() => !quill.options.formats.includes('video') && !quill.options.formats.includes('formula')")
+                page.evaluate("() => quill.clipboard.dangerouslyPasteHTML('<p>No embeds</p><iframe src=\"https://example.test/video\"></iframe>')")
+                assert page.locator('.ql-editor iframe, .ql-editor .ql-formula').count() == 0
                 page.evaluate("""() => quill.clipboard.dangerouslyPasteHTML(
                     '<p><strong>Mix safely</strong></p><ul><li>Keep this bullet</li></ul>')""")
                 for i in range(3):

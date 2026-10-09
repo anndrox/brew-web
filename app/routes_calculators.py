@@ -33,7 +33,10 @@ def validate_numeric_inputs():
 def honey_pounds(volume_gallons, sg_increase):
     if sg_increase < 0:
         raise ValueError('Target gravity must not be lower than current gravity.')
-    return volume_gallons * sg_increase * 1000 / HONEY_POINTS_PER_POUND_GALLON
+    pounds = volume_gallons * sg_increase * 1000 / HONEY_POINTS_PER_POUND_GALLON
+    if not math.isfinite(pounds):
+        raise ValueError('Amount exceeds the supported numeric range.')
+    return pounds
 
 
 def hydrometer_correction(reading, sample_f, calibration_f):

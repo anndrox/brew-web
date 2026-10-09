@@ -31,3 +31,9 @@ the required runtime files and license, update these records/template paths, and
 run the browser smoke tests and offline request checks. Do not replace them with
 an unversioned CDN URL. npm archives and extraction directories remain ignored
 under `.work/` and are not included in the container image.
+
+Quill 2.0.3's known formula/video HTML-export advisory is documented with the
+application's format restrictions, sanitization and regression tests in
+[SECURITY.md](../../../SECURITY.md). It is not claimed to be patched upstream or
+free of advisory findings. Check both npm and Python audit results when reviewing
+this candidate; do not downgrade merely to hide an advisory's version range.

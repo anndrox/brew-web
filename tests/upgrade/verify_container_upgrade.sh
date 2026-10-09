@@ -7,13 +7,24 @@ run_image="$image"
 network="brewweb-upgrade-$$"
 database_container="brewweb-upgrade-db-$$"
 web_container="brewweb-upgrade-web-$$"
+startup_container="brewweb-startup-check-$$"
 database_password="upgrade-test-only"
 
 cleanup() {
-  docker rm -fv "$web_container" "$database_container" >/dev/null 2>&1 || true
+  docker rm -fv "$web_container" "$database_container" "$startup_container" >/dev/null 2>&1 || true
   docker network rm "$network" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT INT TERM
+
+if startup_log="$(docker run --rm --name "$startup_container" \
+  --env SECRET_KEY=startup-validation-only \
+  --env POSTGRES_PASSWORD=startup-validation-only \
+  --env POSTGRES_HOST=missing.invalid \
+  --env DB_WAIT_TIMEOUT=2 "$image" 2>&1)"; then
+  printf '%s\n' 'ERROR: startup accepted an unreachable database.' >&2
+  exit 1
+fi
+printf '%s' "$startup_log" | grep -q 'PostgreSQL connection timed out'
 
 docker network create "$network" >/dev/null
 docker run --detach --name "$database_container" --network "$network" \

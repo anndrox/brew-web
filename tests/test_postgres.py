@@ -99,6 +99,15 @@ def test_unknown_schema_fails_without_stamping_or_mutating_data(engine):
         assert connection.execute(text('SELECT version_num FROM alembic_version')).scalar_one() == 'legacy_generated_id'
 
 
+def test_legacy_sequence_names_are_quoted_and_not_rewound(engine):
+    seed_legacy(engine)
+    with engine.begin() as connection:
+        connection.exec_driver_sql('ALTER SEQUENCE recipe_id_seq RENAME TO "recipe\'s sequence"')
+        connection.exec_driver_sql('SELECT setval(\'"recipe\'\'s sequence"\', 500, true)')
+        prepare_schema(connection)
+        assert connection.execute(text("INSERT INTO recipe (name) VALUES ('New ID') RETURNING id")).scalar_one() == 501
+
+
 def dump_database(engine, path, custom=False, inserts=True):
     url = engine.url
     env = {**os.environ, 'PGPASSWORD': url.password}

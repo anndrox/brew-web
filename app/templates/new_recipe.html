@@ -95,6 +95,7 @@
 <script>
   const quill = new Quill('#quill-editor', {
     theme: 'snow',
+    formats: ['bold', 'italic', 'underline', 'strike', 'list', 'align', 'link', 'header', 'blockquote', 'code-block', 'indent', 'direction'],
     placeholder: 'Write your instruction steps here...',
     modules: {
       toolbar: [
