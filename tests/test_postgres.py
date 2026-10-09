@@ -119,12 +119,18 @@ def test_real_pg_dump_restores_all_data_relationships_and_login(engine, tmp_path
         connection.execute(text('UPDATE recipe SET content=:content'),
                            {'content': "Unicode 🍯, quotes ' and semicolons;\nsecond line"})
     original = snapshot(engine)
+    with engine.connect() as connection:
+        original_search_path = connection.exec_driver_sql('SHOW search_path').scalar_one()
+        original_row_security = connection.exec_driver_sql('SHOW row_security').scalar_one()
     path = tmp_path / ('backup.dump' if custom else 'backup.sql')
     dump_database(engine, path, custom, inserts)
     with engine.begin() as connection:
         connection.exec_driver_sql("UPDATE recipe SET name='Changed after backup'")
     restore_backup(path, engine)
     assert snapshot(engine) == original
+    with engine.connect() as connection:
+        assert connection.exec_driver_sql('SHOW search_path').scalar_one() == original_search_path
+        assert connection.exec_driver_sql('SHOW row_security').scalar_one() == original_row_security
     assert check_password_hash(snapshot(engine)['user'][0]['password_hash'], 'Preserved1!Password')
     restore_backup(path, engine)  # Same file can be restored twice.
     assert snapshot(engine) == original

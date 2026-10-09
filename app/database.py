@@ -210,6 +210,15 @@ def restore_backup(path, engine):
                     if data is not None:
                         cursor.copy_expert(statement, io.StringIO(data))
                     else:
+                        # pg_dump SET and set_config(..., false) affect a whole
+                        # session by default. Keep them in this transaction so
+                        # pooled application connections retain their settings.
+                        if re.match(r'^SET\b', command, re.I):
+                            statement = re.sub(r'^SET\s+(?:(?:SESSION|LOCAL)\s+)?',
+                                               'SET LOCAL ', command, count=1, flags=re.I)
+                        elif re.match(r'^SELECT\s+pg_catalog\.set_config\(', command, re.I):
+                            statement = re.sub(r',\s*false\s*\)\s*;$', ', true);',
+                                               command, flags=re.I)
                         cursor.execute(statement)
             finally:
                 cursor.close()

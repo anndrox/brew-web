@@ -24,7 +24,7 @@ docker run --detach --name "$database_container" --network "$network" \
   >/dev/null
 
 attempt=0
-until docker exec "$database_container" pg_isready -U brewuser -d brewweb >/dev/null 2>&1; do
+until docker exec "$database_container" psql -U brewuser -d brewweb -tAc 'SELECT 1' >/dev/null 2>&1; do
   attempt=$((attempt + 1))
   if [ "$attempt" -ge 30 ]; then
     docker logs "$database_container"
