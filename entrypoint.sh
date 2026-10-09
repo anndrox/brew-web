@@ -5,25 +5,22 @@ db_host="${POSTGRES_HOST:-db}"
 db_user="${POSTGRES_USER:-brewuser}"
 db_name="${POSTGRES_DB:-brewweb}"
 export PGPASSWORD="${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+export PGCONNECT_TIMEOUT=5
+wait_seconds="${DB_WAIT_TIMEOUT:-60}"
+case "$wait_seconds" in ''|*[!0-9]*|0) printf '%s\n' 'DB_WAIT_TIMEOUT must be a positive integer.' >&2; exit 1;; esac
+deadline=$(( $(date +%s) + wait_seconds ))
 
 printf '%s\n' 'Waiting for PostgreSQL...'
 until psql -h "$db_host" -U "$db_user" -d "$db_name" -tAc 'SELECT 1' >/dev/null 2>&1; do
+  if [ "$(date +%s)" -ge "$deadline" ]; then
+    printf '%s\n' 'PostgreSQL connection timed out. Check hostname and existing database credentials; no data was modified.' >&2
+    exit 1
+  fi
   sleep 1
 done
 
-# v1.4.0 and earlier generated migrations at startup. If an existing database
-# has application tables but no Alembic metadata, mark it at this reviewed
-# baseline before applying future committed migrations.
-has_alembic="$(psql -h "$db_host" -U "$db_user" -d "$db_name" -tAc "SELECT to_regclass('public.alembic_version') IS NOT NULL")"
-has_users="$(psql -h "$db_host" -U "$db_user" -d "$db_name" -tAc "SELECT to_regclass('public.user') IS NOT NULL")"
-
-if [ "$has_alembic" != 't' ] && [ "$has_users" = 't' ]; then
-  printf '%s\n' 'Applying legacy v1.4 compatibility fixes...'
-  psql -v ON_ERROR_STOP=1 -h "$db_host" -U "$db_user" -d "$db_name" \
-    -f migrations/legacy_v1_4_compat.sql
-  printf '%s\n' 'Stamping existing v1.4 schema at the migration baseline...'
-  flask db stamp head
-fi
+printf '%s\n' 'Validating database compatibility...'
+flask prepare-schema
 
 printf '%s\n' 'Applying database migrations...'
 flask db upgrade

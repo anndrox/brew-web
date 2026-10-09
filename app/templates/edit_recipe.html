@@ -3,9 +3,9 @@
 <h1>Edit Recipe</h1>
 
 <!-- Quill CSS -->
-<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<link href="{{ url_for('static', filename='vendor/quill-2.0.3/quill.snow.css') }}" rel="stylesheet">
 
-<form method="POST">
+<form method="POST" id="recipe-form">
   <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 
   <label for="name">Name:</label><br/>
@@ -70,7 +70,7 @@
 </p>
 
 <!-- Quill JS -->
-<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<script src="{{ url_for('static', filename='vendor/quill-2.0.3/quill.js') }}"></script>
 <script>
   const quill = new Quill('#quill-editor', {
     theme: 'snow',
@@ -87,12 +87,12 @@
   });
 
   // Set initial content from server
-  const existingInstructions = `{{ recipe.content | safe }}`;
-  quill.root.innerHTML = existingInstructions;
+  const existingInstructions = {{ (recipe.content | instructions_html) | tojson }};
+  quill.clipboard.dangerouslyPasteHTML(existingInstructions); // Already sanitized server-side.
 
   // Copy HTML to hidden input on submit
-  document.querySelector('form').addEventListener('submit', function () {
-    document.getElementById('content').value = quill.root.innerHTML;
+  document.getElementById('recipe-form').addEventListener('submit', function () {
+    document.getElementById('content').value = quill.getSemanticHTML();
   });
 
   let ingredientIndex = {{ recipe.ingredients|length }};

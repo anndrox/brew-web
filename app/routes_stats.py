@@ -24,7 +24,8 @@ def view_stats():
         .all()
     )
 
-    dates = [row.date.strftime('%Y-%m-%d') for row in batch_counts]
+    dates = [row.date if isinstance(row.date, str) else row.date.strftime('%Y-%m-%d')
+             for row in batch_counts]
     counts = [row.count for row in batch_counts]
 
     return render_template(

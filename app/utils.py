@@ -1,14 +1,13 @@
 import requests
 from functools import wraps
-from flask import abort, current_app
+from flask import abort, current_app, g, has_request_context
+import nh3
 from flask_login import current_user
 from config import Config
 import re
 import json
 import os
 import time
-from sqlalchemy import text
-from sqlalchemy.exc import ProgrammingError
 
 _update_cache = None
 _update_cache_at = 0.0
@@ -41,53 +40,51 @@ def check_for_updates():
     if _update_cache is not None and now - _update_cache_at < _UPDATE_CACHE_SECONDS:
         return _update_cache
 
+    _update_cache = {"update_available": False, "current": Config.VERSION, "latest": "unknown"}
+    _update_cache_at = now  # Cache failures too, avoiding repeated offline delays.
     try:
-        latest_url = "https://raw.githubusercontent.com/anndrox/brew-web/main/VERSION"
+        latest_url = "https://api.github.com/repos/anndrox/brew-web/releases/latest"
         resp = requests.get(latest_url, timeout=2)
 
         if resp.status_code == 200:
-            latest_version = resp.text.strip()
+            latest_version = resp.json()['tag_name'].removeprefix('v')
+            current_parts = tuple(int(part) for part in Config.VERSION.split('.'))
+            latest_parts = tuple(int(part) for part in latest_version.split('.'))
+            if len(latest_parts) != 3:
+                return _update_cache
             _update_cache = {
-                "update_available": latest_version != Config.VERSION,
+                "update_available": latest_parts > current_parts,
                 "current": Config.VERSION,
                 "latest": latest_version
             }
             _update_cache_at = now
             return _update_cache
-    except Exception as e:
-        return {
-            "update_available": False,
-            "error": str(e),
-            "current": Config.VERSION,
-            "latest": "unknown"
-        }
-
-    return {
-        "update_available": False,
-        "current": Config.VERSION,
-        "latest": "unknown"
-    }
+    except (requests.RequestException, KeyError, ValueError, TypeError):
+        pass
+    return _update_cache
 
 def get_unit_preference():
-    """Return 'imperial' or 'metric' based on AppSettings; defaults to imperial on errors."""
-    try:
-        from app.models import AppSettings  # local import to avoid circular dependency
-        settings = AppSettings.query.first()
-        if settings and settings.unit_preference in ('imperial', 'metric'):
-            return settings.unit_preference
-    except ProgrammingError:
-        try:
-            from app import db
-            db.session.execute(text("ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS unit_preference VARCHAR(10) DEFAULT 'imperial';"))
-            db.session.commit()
-            settings = AppSettings.query.first()
-            if settings and settings.unit_preference in ('imperial', 'metric'):
-                return settings.unit_preference
-        except Exception:
-            return 'imperial'
-    except Exception:
-        pass
-    return 'imperial'
+    """One settings query per request; schema repairs belong to startup, not page rendering."""
+    if has_request_context() and hasattr(g, 'unit_preference'):
+        return g.unit_preference
+    from app.models import AppSettings
+    settings = AppSettings.query.first()
+    preference = settings.unit_preference if settings else 'imperial'
+    if preference not in ('imperial', 'metric'):
+        preference = 'imperial'
+    if has_request_context():
+        g.unit_preference = preference
+    return preference
+
+
+def sanitize_instructions(content):
+    """Keep Quill formatting, never executable markup; old rows are sanitized on display."""
+    tags = {'p', 'br', 'div', 'span', 'b', 'strong', 'i', 'em', 'u', 's',
+            'ol', 'ul', 'li', 'a', 'blockquote', 'pre', 'code', 'h1', 'h2', 'h3'}
+    classes = {'ql-align-center', 'ql-align-right', 'ql-align-justify', 'ql-direction-rtl'}
+    return nh3.clean(content or '', tags=tags, attributes={'a': {'href', 'title', 'target'}},
+                     allowed_classes={tag: classes for tag in tags},
+                     url_schemes={'http', 'https', 'mailto'})
 
 def is_metric():
     return get_unit_preference() == 'metric'

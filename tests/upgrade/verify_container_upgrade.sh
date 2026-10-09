@@ -2,6 +2,8 @@
 set -eu
 
 image="${1:-brewweb:ci}"
+published_image='ghcr.io/anndrox/brew-web@sha256:903a350b742d817885a62f6ca17d67afe99ff8a997aa3bc8bddd87095def7f73'
+run_image="$image"
 network="brewweb-upgrade-$$"
 database_container="brewweb-upgrade-db-$$"
 web_container="brewweb-upgrade-web-$$"
@@ -48,7 +50,7 @@ start_web() {
     --env POSTGRES_USER=brewuser \
     --env POSTGRES_PASSWORD="$database_password" \
     --env POSTGRES_DB=brewweb \
-    "$image" >/dev/null
+    "$run_image" >/dev/null
 
   attempt=0
   until [ "$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$web_container")" = healthy ]; do
@@ -67,7 +69,24 @@ verify_data() {
     < tests/upgrade/verify_preserved_data.sql
 }
 
-# First startup exercises the unversioned v1.4 compatibility path.
+# First prove the currently published v1.4.0 image's database can be opened by
+# the candidate; same database, credentials, mounts, data and PostgreSQL major.
+run_image="$published_image"
+start_web
+verify_data
+docker rm -fv "$web_container" >/dev/null
+run_image="$image"
+start_web
+verify_data
+docker rm -fv "$web_container" >/dev/null
+
+# Reset ONLY the disposable runner database, never a user volume, to exercise
+# the unversioned schema separately from the published/versioned installation.
+docker exec "$database_container" psql --set ON_ERROR_STOP=1 --username brewuser --dbname brewweb \
+  -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+docker exec --interactive "$database_container" psql \
+  --set ON_ERROR_STOP=1 --username brewuser --dbname brewweb \
+  < tests/upgrade/legacy_v1_4.sql
 start_web
 verify_data
 
@@ -76,4 +95,4 @@ docker rm -fv "$web_container" >/dev/null
 start_web
 verify_data
 
-printf '%s\n' 'Legacy database upgrade preserved all representative data on both startups.'
+printf '%s\n' 'Published v1.4.0 upgrade, unversioned compatibility and second startup preserved representative data.'

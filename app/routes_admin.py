@@ -2,31 +2,35 @@ import os
 import subprocess
 import threading
 import json
+import tempfile
 from flask import Blueprint, render_template, redirect, url_for, request, flash, abort, send_file, send_from_directory, current_app, jsonify
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
-from sqlalchemy import text
-from sqlalchemy.exc import ProgrammingError
 from .models import db, User, AppSettings
 from app.decorators import role_required
 from app.utils import is_strong_password, check_for_updates, read_import_status_file
 from datetime import UTC, datetime
-import re
 
 BACKUP_FOLDER = os.path.join(os.getcwd(), "backups")
 os.makedirs(BACKUP_FOLDER, exist_ok=True)
 IMPORT_STATUS_PATH = None
-DB_HOST = os.environ.get('POSTGRES_HOST', 'db')
-DB_USER = os.environ.get('POSTGRES_USER', 'brewuser')
-DB_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
-DB_NAME = os.environ.get('POSTGRES_DB', 'brewweb')
+_import_lock = threading.Lock()
 
 
 def _postgres_env():
     env = os.environ.copy()
-    env['PGPASSWORD'] = DB_PASSWORD
+    env['PGPASSWORD'] = db.engine.url.password or ''
+    env['PGCONNECT_TIMEOUT'] = '5'
     return env
+
+
+def _postgres_command(tool):
+    url = db.engine.url
+    if url.get_backend_name() != 'postgresql':
+        abort(400, 'PostgreSQL backup tools require a PostgreSQL database.')
+    return [tool, '-h', url.host or 'localhost', '-p', str(url.port or 5432),
+            '-U', url.username or '', '-d', url.database or '']
 
 
 def _backup_path(filename):
@@ -42,18 +46,12 @@ admin_bp = Blueprint('admin_bp', __name__, url_prefix='/settings/admin')
 @role_required('admin')
 def admin_settings():
     users = User.query.order_by(User.username).all()
-    try:
-        settings = AppSettings.query.first() or AppSettings()
-    except ProgrammingError:
-        # Likely missing new columns on restored backup; patch and retry once
-        db.session.execute(text("ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS unit_preference VARCHAR(10) DEFAULT 'imperial';"))
-        db.session.commit()
-        settings = AppSettings.query.first() or AppSettings()
+    settings = AppSettings.query.first() or AppSettings()
     if not settings.unit_preference:
         settings.unit_preference = 'imperial'
     update_info = check_for_updates()
     backups = sorted(
-        [f for f in os.listdir(BACKUP_FOLDER) if f.endswith(".sql")],
+        [f for f in os.listdir(BACKUP_FOLDER) if f.endswith((".sql", ".dump"))],
         reverse=True
     )
     import_status = _read_import_status()
@@ -79,6 +77,8 @@ def create_user():
     username = request.form.get('username')
     password = request.form.get('password')
     role = request.form.get('role')
+    if role == 'viewer':
+        role = 'user'  # Historical UI label; both remain read-only.
 
     if role not in {'admin', 'editor', 'user'}:
         flash('Invalid role.', 'danger')
@@ -137,11 +137,7 @@ def create_backup():
 
     try:
         with open(backup_path, "w") as f:
-            subprocess.run([
-                "pg_dump",
-                "-h", DB_HOST,
-                "-U", DB_USER,
-                "-d", DB_NAME,
+            subprocess.run(_postgres_command('pg_dump') + [
                 "--no-owner",
                 "--no-privileges",
                 "--inserts"
@@ -185,11 +181,7 @@ def export_db():
 
     try:
         with open(backup_path, "w") as f_out:
-            subprocess.run([
-                "pg_dump",
-                "-h", DB_HOST,
-                "-U", DB_USER,
-                "-d", DB_NAME,
+            subprocess.run(_postgres_command('pg_dump') + [
                 "--no-owner",
                 "--no-privileges",
                 "--inserts",
@@ -213,18 +205,26 @@ def import_db():
         return redirect(url_for('routes.admin_bp.admin_settings'))
 
     filename = secure_filename(file.filename)
-    if not filename.endswith(".sql"):
-        flash("Invalid file format. Expected .sql", "danger")
+    if not filename.endswith((".sql", ".dump")):
+        flash("Invalid file format. Expected .sql or .dump from pg_dump.", "danger")
         return redirect(url_for('routes.admin_bp.admin_settings'))
 
-    temp_path = os.path.join(BACKUP_FOLDER, filename)
-    file.save(temp_path)
+    if not _import_lock.acquire(blocking=False):
+        flash("An import is already running.", "danger")
+        return redirect(url_for('routes.admin_bp.import_status_page'))
 
     try:
+        # Do not overwrite the owner's existing backup with an upload.
+        with tempfile.NamedTemporaryFile(dir=BACKUP_FOLDER, prefix='import-',
+                                         suffix=os.path.splitext(filename)[1], delete=False) as upload:
+            temp_path = upload.name
+            file.save(upload)
         _write_import_status("running", "Import started; this may take ~30s.")
         _start_background_import(temp_path)
         flash("Import started in background. You will be redirected to status.", "info")
     except Exception as e:
+        if _import_lock.locked():
+            _import_lock.release()
         _write_import_status("error", f"Failed to start import: {e}")
         flash(f"Import failed: {e}", "danger")
 
@@ -248,6 +248,9 @@ def import_status_page():
 @login_required
 @role_required('admin')
 def clear_import_status():
+    if (_read_import_status() or {}).get('status') == 'running':
+        flash("Cannot clear status while an import is running.", "danger")
+        return redirect(url_for('routes.admin_bp.import_status_page'))
     _clear_import_status()
     flash("Import status cleared.", "info")
     return redirect(url_for('routes.admin_bp.admin_settings'))
@@ -258,35 +261,27 @@ def _start_background_import(sql_path):
 
     def worker():
         with app.app_context():
-            env = _postgres_env()
             try:
-                _write_import_status("running", "Dropping schema…")
-                subprocess.run(
-                    ["psql", "-h", DB_HOST, "-U", DB_USER, "-d", DB_NAME, "-c", "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"],
-                    check=True,
-                    env=env,
-                )
-                _write_import_status("running", "Importing SQL…")
-                import_run = subprocess.run(
-                    ["psql", "-h", DB_HOST, "-U", DB_USER, "-d", DB_NAME, "-f", sql_path],
-                    check=False,
-                    env=env,
-                )
-                if import_run.returncode != 0:
-                    _write_import_status("running", f"Import completed with return code {import_run.returncode}; continuing…")
-                _write_import_status("running", "Applying schema fixes…")
-                _apply_schema_fixes(env)
-                _write_import_status("running", "Seeding yeast data…")
-                subprocess.run(["flask", "seed-yeasts"], check=False, env=env, cwd=os.getcwd())
-                _write_import_status("success", "Import completed and schema fixed.")
-            except subprocess.CalledProcessError as e:
-                _write_import_status("error", f"Import failed: {e}")
-            except Exception as e:
-                _write_import_status("error", f"Unexpected error: {e}")
+                _write_import_status("running", "Validating and restoring backup transactionally…")
+                from app.database import restore_backup
+                restore_backup(sql_path, db.engine)
+                db.session.remove()
+                _write_import_status("success", "Import committed; schema and administrator verified. Sign in using the restored account.")
+            except Exception:
+                db.session.rollback()
+                app.logger.exception("Database restore failed; transaction rolled back")
+                _write_import_status("error", "Restore failed and was rolled back. Original database retained; check the local application log.")
+            finally:
+                try:
+                    os.remove(sql_path)
+                finally:
+                    _import_lock.release()
 
-    threading.Thread(target=worker, daemon=True).start()
-
-
+    try:
+        threading.Thread(target=worker, daemon=True).start()
+    except Exception:
+        _import_lock.release()
+        raise
 def _write_import_status(status, message):
     try:
         os.makedirs(current_app.instance_path, exist_ok=True)
@@ -310,175 +305,3 @@ def _clear_import_status():
             os.remove(path)
     except Exception:
         pass
-
-def _latest_local_revision():
-    # Look for migrations in /app/migrations/versions
-    base_dir = os.path.abspath(os.path.join(current_app.root_path, ".."))
-    versions_path = os.path.join(base_dir, "migrations", "versions")
-    try:
-        entries = sorted([f for f in os.listdir(versions_path) if f.endswith(".py")])
-        if not entries:
-            return None
-        revs = [re.split(r"[_\.]", f)[0] for f in entries]
-        return revs[-1] if revs else None
-    except Exception:
-        return None
-
-def _stamp_head_with_fallback(env):
-    try:
-        subprocess.run(["flask", "db", "stamp", "head"], check=True, env=env, cwd=os.getcwd())
-        return
-    except Exception:
-        pass
-    # Fallback: manually set alembic_version to local latest revision or known revision id
-    rev = _latest_local_revision() or "d00abd51392a"
-    try:
-        db.session.execute(text("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) NOT NULL);"))
-        db.session.execute(text("DELETE FROM alembic_version;"))
-        db.session.execute(text("INSERT INTO alembic_version (version_num) VALUES (:rev)"), {"rev": rev})
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-def _apply_schema_fixes(env):
-    commands = []
-    # Create tables if missing
-    commands.extend([
-        """
-        CREATE TABLE IF NOT EXISTS yeast (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            alcohol_type VARCHAR(20) NOT NULL,
-            tolerance VARCHAR(50),
-            strength VARCHAR(50),
-            sweetness_retention VARCHAR(50),
-            notes TEXT,
-            flocculation VARCHAR(50),
-            attenuation VARCHAR(10),
-            is_default BOOLEAN DEFAULT FALSE
-        );
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS recipe (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            alcohol_type VARCHAR(20),
-            content TEXT,
-            created_date TIMESTAMP,
-            instructions TEXT,
-            notes TEXT,
-            water_type VARCHAR(50),
-            yeast_id INTEGER REFERENCES yeast(id)
-        );
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS batch (
-            id SERIAL PRIMARY KEY,
-            recipe_id INTEGER REFERENCES recipe(id),
-            name VARCHAR(100) NOT NULL,
-            start_date TIMESTAMP,
-            end_date TIMESTAMP
-        );
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS "user" (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(120) UNIQUE NOT NULL,
-            password_hash VARCHAR(512) NOT NULL,
-            is_admin BOOLEAN DEFAULT FALSE,
-            role VARCHAR(50) DEFAULT 'user',
-            theme VARCHAR(20) DEFAULT 'dark',
-            font_size VARCHAR(10) DEFAULT '16px'
-        );
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS ingredient (
-            id SERIAL PRIMARY KEY,
-            recipe_id INTEGER REFERENCES recipe(id),
-            name VARCHAR(100) NOT NULL,
-            amount_per_gallon FLOAT,
-            unit VARCHAR(20),
-            note VARCHAR(200)
-        );
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS measurement (
-            id SERIAL PRIMARY KEY,
-            batch_id INTEGER REFERENCES batch(id),
-            date TIMESTAMP,
-            gravity FLOAT,
-            ph FLOAT,
-            temperature FLOAT,
-            notes TEXT
-        );
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS calendar_event (
-            id SERIAL PRIMARY KEY,
-            batch_id INTEGER REFERENCES batch(id),
-            title VARCHAR(100) NOT NULL,
-            start DATE NOT NULL,
-            "end" DATE,
-            description TEXT,
-            all_day BOOLEAN DEFAULT TRUE,
-            created_by INTEGER REFERENCES "user"(id),
-            note TEXT
-        );
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS app_settings (
-            id SERIAL PRIMARY KEY,
-            base_url VARCHAR(255),
-            unit_preference VARCHAR(10) DEFAULT 'imperial'
-        );
-        """
-    ])
-    # Add/patch columns to match current models
-    commands.extend([
-        "ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS unit_preference VARCHAR(10) DEFAULT 'imperial';",
-        "ALTER TABLE recipe ADD COLUMN IF NOT EXISTS yeast_id INTEGER;",
-        """
-        DO $$ BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'recipe_yeast_id_fkey') THEN
-                ALTER TABLE recipe ADD CONSTRAINT recipe_yeast_id_fkey
-                    FOREIGN KEY (yeast_id) REFERENCES yeast(id);
-            END IF;
-        END $$;
-        """,
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS batch_size FLOAT;",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS fermentation_temp VARCHAR(50);",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS initial_gravity FLOAT;",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS final_gravity FLOAT;",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS abv FLOAT;",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS yeast_type VARCHAR(100);",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS backsweetened BOOLEAN;",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS flavor_additions TEXT;",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS pectic_used BOOLEAN;",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS notes TEXT;",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS water_type VARCHAR(50);",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS alcohol_type VARCHAR(20);",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS tosna_total FLOAT;",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS tosna_per_day FLOAT;",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS tosna_enabled BOOLEAN;",
-        "ALTER TABLE batch ADD COLUMN IF NOT EXISTS yeast_id INTEGER;",
-        """
-        DO $$ BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'batch_yeast_id_fkey') THEN
-                ALTER TABLE batch ADD CONSTRAINT batch_yeast_id_fkey
-                    FOREIGN KEY (yeast_id) REFERENCES yeast(id);
-            END IF;
-        END $$;
-        """,
-        "ALTER TABLE ingredient ADD COLUMN IF NOT EXISTS amount_per_gallon FLOAT;",
-        "ALTER TABLE ingredient ADD COLUMN IF NOT EXISTS unit VARCHAR(20);",
-        "ALTER TABLE ingredient ADD COLUMN IF NOT EXISTS note VARCHAR(200);",
-        "ALTER TABLE measurement ADD COLUMN IF NOT EXISTS ph FLOAT;",
-        "ALTER TABLE measurement ADD COLUMN IF NOT EXISTS temperature FLOAT;"
-    ])
-
-    for cmd in commands:
-        subprocess.run(
-            ["psql", "-h", DB_HOST, "-U", DB_USER, "-d", DB_NAME, "-c", cmd],
-            check=False,
-            env=env,
-        )

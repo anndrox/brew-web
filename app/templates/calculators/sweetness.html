@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Sweetness Targeting Calculator</h1>
+<p>Rough honey estimate at 35 gravity points per lb per gallon; added honey changes volume. Stabilize appropriately before backsweetening and verify gravity. Sweetening is not a bottle-priming instruction.</p>
 <form method="POST">
   <label>Current Gravity:</label>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>

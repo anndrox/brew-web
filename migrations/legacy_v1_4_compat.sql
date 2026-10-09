@@ -1,6 +1,5 @@
--- One-time compatibility repair for databases created before committed
--- Alembic migrations were introduced. The entry point runs this only when it
--- detects application tables without an alembic_version table.
+-- Additive compatibility repair, used only after Python validates the known
+-- v1.3.1/v1.4 schema shape. Never alter stored measurements or password hashes.
 
 CREATE TABLE IF NOT EXISTS yeast (
     id SERIAL PRIMARY KEY,
@@ -17,6 +16,7 @@ CREATE TABLE IF NOT EXISTS yeast (
 
 ALTER TABLE IF EXISTS recipe ADD COLUMN IF NOT EXISTS yeast_id INTEGER;
 ALTER TABLE IF EXISTS batch ADD COLUMN IF NOT EXISTS yeast_id INTEGER;
+ALTER TABLE IF EXISTS batch ADD COLUMN IF NOT EXISTS batch_size FLOAT;
 ALTER TABLE IF EXISTS batch ADD COLUMN IF NOT EXISTS tosna_total FLOAT;
 ALTER TABLE IF EXISTS batch ADD COLUMN IF NOT EXISTS tosna_per_day FLOAT;
 ALTER TABLE IF EXISTS batch ADD COLUMN IF NOT EXISTS tosna_enabled BOOLEAN DEFAULT FALSE;

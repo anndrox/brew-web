@@ -7,7 +7,8 @@
 
 Brew-Web is a self-hosted Flask application for managing brewing recipes, batches,
 measurements, yeast references, calendars, and calculators. It runs as a non-root
-container with PostgreSQL and is designed to sit behind an HTTPS reverse proxy.
+container with PostgreSQL for local self-hosted use. LAN access should stay on
+trusted interfaces; use an HTTPS reverse proxy when serving beyond localhost.
 
 ## Features
 
@@ -18,6 +19,13 @@ container with PostgreSQL and is designed to sit behind an HTTPS reverse proxy.
 - PostgreSQL backup and restore from the administration page
 - Versioned database migrations and automatic startup upgrades
 - CSRF-protected calendar changes and browser security headers
+- Locally bundled charts, calendar and recipe editor assets for offline use
+
+The v1.4.1 candidate adds safer legacy upgrades and transactional restores,
+corrected brewing estimates and ingredient editing. Read the detailed
+[upgrade compatibility guide](docs/compatibility.md),
+[calculator assumptions](docs/calculators.md) and
+[behavior-to-test coverage](docs/testing.md) before upgrading.
 
 ## Maintenance and support
 
@@ -92,6 +100,8 @@ Copy `.env.example` to `.env`; `.env` is intentionally ignored by Git.
 | `SESSION_COOKIE_SECURE` | `false` | Set to `true` when served exclusively over HTTPS |
 | `BREWWEB_IMAGE` | `ghcr.io/anndrox/brew-web:latest` | Container image or local tag |
 | `RATELIMIT_STORAGE_URI` | `memory://` | Shared Flask-Limiter storage when using multiple workers |
+| `DB_WAIT_TIMEOUT` | `60` | Maximum PostgreSQL connection wait, seconds |
+| `BREWWEB_DATA_VOLUME` | unset | Exact existing named volume, only with the legacy-volume override |
 
 Runtime data is stored in the `pgdata` Docker volume and the local `instance/`,
 `logs/`, and `backups/` directories. Do not commit any of those contents.
@@ -113,23 +123,33 @@ docker compose --profile tools run --rm export
 
 Then update and restart:
 
+**Existing installations:** first verify the old database volume and retain its
+credentials. Older Compose project names can select a different empty volume.
+Use [the documented external-volume override](docs/compatibility.md#keep-the-existing-docker-volume)
+when necessary; the simple commands below are for an unchanged volume/project.
+
 ```bash
 git pull --ff-only
 docker compose pull web db
 docker compose up -d --no-build
 ```
 
-Committed Alembic migrations are applied automatically. Existing unversioned v1.4
-databases receive a one-time compatibility repair before being marked at the
-baseline. `docker compose down` preserves data; do not add `--volumes` unless you
-intentionally want to erase the database.
+Committed Alembic migrations are applied automatically. Recognized v1.3.1/early
+v1.4 schemas, including old generated migration IDs, receive an additive repair
+before being marked at the fixed baseline. Unknown or partial layouts fail closed.
+`docker compose down` preserves data; do not add `--volumes` unless you intentionally
+want to erase the database. Pinning or downgrading the image does not restore data.
 
-CI also exercises this upgrade path against an isolated PostgreSQL database. It
-seeds representative account, settings, yeast, recipe, batch, ingredient,
-measurement, and calendar data, starts the current image twice, and verifies the
-rows and relationships remain intact after the compatibility repair and Alembic
-migration. This guards the supported upgrade path; creating a backup before an
-upgrade remains required operational practice.
+The administration page imports trusted `.sql` and `.dump` PostgreSQL backups.
+Schema replacement, data load and validation commit together; a failed restore
+rolls back and retains the original database. After success, use the restored
+administrator's credentials. See the compatibility guide for supported dump
+formats, maintenance-window requirements and recovery steps.
+
+GitHub CI verifies representative legacy data and an upgrade from the published
+v1.4.0 image, repeat startup, real SQL/COPY/custom-format backups and controlled
+restore failures. This guards the documented paths; a verified pre-upgrade backup
+is still required.
 
 ## Development
 
@@ -140,9 +160,12 @@ python -m pip install -r requirements-dev.txt
 ruff check .
 python -m pytest
 pip-audit -r requirements.txt
-docker compose config --quiet
-docker build -t brewweb:dev .
 ```
+
+For this project's maintainer workflow, container and PostgreSQL integration
+checks run on GitHub hosted runners, not local Docker Desktop. Submit a branch/PR
+to run CI; local `pytest` explicitly skips runner-only database integration cases.
+See [verification and release gates](docs/testing.md).
 
 Changes should be made on a branch and submitted through a pull request. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [SECURITY.md](SECURITY.md)

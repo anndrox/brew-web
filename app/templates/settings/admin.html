@@ -67,7 +67,7 @@
     <option value="">-- Role --</option>
     <option value="admin">Admin</option>
     <option value="editor">Editor</option>
-    <option value="viewer">Viewer</option>
+    <option value="user">Viewer (read-only user)</option>
   </select>
   <button type="submit">➕ Add User</button>
 </form>
@@ -123,8 +123,9 @@
 <form id="importForm" action="{{ url_for('routes.admin_bp.import_db') }}" method="post" enctype="multipart/form-data"
       onsubmit="return confirm('⚠️ This will overwrite all data. Continue?');">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <label for="backup_file">📤 Import Database (.sql):</label>
-  <input type="file" name="backup_file" required>
+  <label for="backup_file">📤 Import trusted pg_dump backup (.sql or .dump):</label>
+  <input type="file" name="backup_file" accept=".sql,.dump" required>
+  <p>Download a current backup first. Import replaces this database only after the complete restore and schema validation succeed. Use only your own trusted Brew-Web backups.</p>
   <button type="submit">Upload</button>
 </form>
 
