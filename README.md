@@ -19,6 +19,20 @@ container with PostgreSQL and is designed to sit behind an HTTPS reverse proxy.
 - Versioned database migrations and automatic startup upgrades
 - CSRF-protected calendar changes and browser security headers
 
+## Maintenance and support
+
+Brew-Web is maintained on a best-effort basis rather than an active feature
+roadmap. Reproducible defects and security issues are prioritized as maintainer
+time permits, but response, review, and release times are not guaranteed. Feature
+requests are welcome for discussion and may remain open until a contributor is
+available to implement them.
+
+For a stable installation, pin a numbered release instead of `latest`, keep a
+verified PostgreSQL backup outside the container host, read release notes before
+upgrading, and validate the upgrade in a non-production copy when practical. Use
+the issue forms for reproducible bugs, and report suspected vulnerabilities
+privately as described in [SECURITY.md](SECURITY.md).
+
 ## Quick start
 
 Requirements: Git, Docker Engine or Docker Desktop, and Docker Compose v2.

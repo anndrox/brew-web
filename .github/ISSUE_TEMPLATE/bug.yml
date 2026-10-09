@@ -5,7 +5,10 @@ labels: [bug]
 body:
   - type: markdown
     attributes:
-      value: Please avoid including passwords, database dumps, or other sensitive data.
+      value: >-
+        Brew-Web is maintained on a best-effort basis with no response-time SLA.
+        Complete reports with reproduction steps are easiest to address. Please
+        avoid including passwords, database dumps, or other sensitive data.
   - type: input
     id: version
     attributes:

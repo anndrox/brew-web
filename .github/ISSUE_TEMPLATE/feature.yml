@@ -3,6 +3,12 @@ description: Suggest an improvement to Brew-Web.
 title: "[Feature]: "
 labels: [enhancement]
 body:
+  - type: markdown
+    attributes:
+      value: >-
+        Brew-Web does not have an active feature roadmap. Suggestions are welcome,
+        but acceptance or a delivery date is not guaranteed; focused pull requests
+        are also welcome.
   - type: textarea
     id: problem
     attributes:
@@ -20,3 +26,10 @@ body:
     id: alternatives
     attributes:
       label: Alternatives considered
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues for the same request.
+          required: true

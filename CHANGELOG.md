@@ -18,6 +18,8 @@
 - Parameterized all PostgreSQL commands and replaced dynamic startup migrations with reviewed,
   committed migrations.
 - Reworked installation, upgrade, backup, security, and development documentation.
+- Clarified the project's best-effort maintenance model and recommended operational
+  practices for stable installations, issue reports, and contributions.
 
 ### Fixed
 
