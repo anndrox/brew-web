@@ -110,6 +110,13 @@ databases receive a one-time compatibility repair before being marked at the
 baseline. `docker compose down` preserves data; do not add `--volumes` unless you
 intentionally want to erase the database.
 
+CI also exercises this upgrade path against an isolated PostgreSQL database. It
+seeds representative account, settings, yeast, recipe, batch, ingredient,
+measurement, and calendar data, starts the current image twice, and verifies the
+rows and relationships remain intact after the compatibility repair and Alembic
+migration. This guards the supported upgrade path; creating a backup before an
+upgrade remains required operational practice.
+
 ## Development
 
 ```bash
