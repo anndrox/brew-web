@@ -38,7 +38,10 @@ docker exec --interactive "$database_container" psql \
 start_web() {
   docker run --detach --name "$web_container" --network "$network" \
     --read-only \
-    --tmpfs /tmp --tmpfs /app/instance --tmpfs /app/logs --tmpfs /app/backups \
+    --tmpfs /tmp:rw,uid=1000,gid=1000,mode=1777 \
+    --tmpfs /app/instance:rw,uid=1000,gid=1000,mode=0755 \
+    --tmpfs /app/logs:rw,uid=1000,gid=1000,mode=0755 \
+    --tmpfs /app/backups:rw,uid=1000,gid=1000,mode=0755 \
     --security-opt no-new-privileges:true \
     --env SECRET_KEY=upgrade-validation-only \
     --env POSTGRES_HOST="$database_container" \
