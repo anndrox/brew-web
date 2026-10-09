@@ -67,6 +67,31 @@ Docker/Compose checks are not moved onto the Forgejo runner and remain deferred
 there pending a separately approved isolated-builder design. No host socket,
 privileged mode, host execution or runner infrastructure change is required.
 
+## Candidate verification record
+
+On October 9, 2026, implementation SHA
+`56384bfc70f44cf9f9d35054428953d3ff988243` passed
+[CI run 37927305398](https://github.com/anndrox/brew-web/actions/runs/37927305398)
+and [CodeQL run 37927305476](https://github.com/anndrox/brew-web/actions/runs/37927305476).
+Python 3.11 and 3.13 each passed 61 tests; their 15 integration skips were run
+separately against PostgreSQL 15, where all 15 passed. Ruff, the production Python
+dependency audit, the offline Chromium journey, Compose volume checks and image
+upgrade checks passed. The Python audit reported no known vulnerabilities;
+the separate browser audit still has the documented Quill advisory below.
+
+Intentional negative tests included an unreachable database startup, invalid
+restore input, incompatible schemas and concurrent restore refusal. They passed
+by detecting the expected failure and preserving the disposable original data.
+Earlier failed integration runs exposed real compatibility/test-environment
+issues; they are not reclassified as deliberate failure tests.
+
+The final candidate must also pass checks after documentation/release-gate edits.
+Its exact SHA and final run links are recorded in
+[PR #31](https://github.com/anndrox/brew-web/pull/31). No published-image verification
+of v1.4.1 is claimed before publication: the release workflow performs an
+anonymous digest-pinned pull and isolated upgrade checks after pushing, and must
+finish successfully before the GitHub release page is published.
+
 ## Release timing
 
 The compatibility/reliability work stays on `codex/compatibility-and-reliability`

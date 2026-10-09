@@ -43,6 +43,11 @@ This verifies a fresh installation; it is not an exhaustive upgrade or feature t
    followed by `docker compose up -d --no-build`. Check setup and migrations in an
    isolated test database before recommending an upgrade. Do not start local
    Docker Desktop or attach an existing user's volume for release validation.
+   The publishing workflow automatically checks anonymous pull of its exact
+   output digest and runs isolated startup/data-preserving upgrade tests with
+   that published image. A failed post-push check blocks release-page publication;
+   it cannot undo an already pushed image, so do not move the version tag or
+   describe that release as verified until the failure is resolved.
 5. Publish the matching GitHub release page with notes, supported platforms, image
    reference, and backup guidance. If GHCR creates a new package as private, its
    owner must make the package public before advertising anonymous installation.

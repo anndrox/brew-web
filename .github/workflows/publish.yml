@@ -16,6 +16,8 @@ jobs:
   publish:
     needs: validate
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
     permissions:
       contents: read
       packages: write
@@ -42,6 +44,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest
       - name: Build and publish
+        id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
@@ -50,3 +53,21 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           provenance: mode=max
           sbom: true
+
+  verify-published:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DOCKER_CONFIG: ${{ runner.temp }}/brewweb-anonymous-docker
+      PUBLISHED_IMAGE: ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.digest }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Verify anonymous access to the immutable published image
+        run: |
+          mkdir -p "$DOCKER_CONFIG"
+          docker pull "$PUBLISHED_IMAGE"
+      - name: Verify published image startup and data-preserving upgrades
+        run: sh tests/upgrade/verify_container_upgrade.sh "$PUBLISHED_IMAGE"
