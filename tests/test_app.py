@@ -1,8 +1,27 @@
 import re
 from datetime import datetime
 
+import pytest
+
 from app import db
-from app.models import Batch, CalendarEvent, Recipe, User, Yeast
+from app.models import (
+    AppSettings,
+    Batch,
+    CalendarEvent,
+    Ingredient,
+    Measurement,
+    Recipe,
+    User,
+    Yeast,
+)
+from app.utils import (
+    c_to_f,
+    f_to_c,
+    gallons_to_liters,
+    liters_to_gallons,
+    per_gallon_to_per_liter,
+    per_liter_to_per_gallon,
+)
 
 
 def create_admin(app):
@@ -42,6 +61,246 @@ def test_setup_rejects_weak_password(client):
         follow_redirects=True,
     )
     assert b'Use at least 8 characters' in response.data
+
+
+def test_metric_recipe_ingredient_amount_round_trips_on_create(app, client):
+    admin_id = create_admin(app)
+    with app.app_context():
+        db.session.add(AppSettings(unit_preference='metric'))
+        db.session.commit()
+    login_as(client, admin_id)
+
+    response = client.post(
+        '/app/recipes/new',
+        data={
+            'name': 'Metric Recipe',
+            'content': 'Mix well',
+            'alcohol_type': 'Mead',
+            'ingredient_name_0': 'Honey',
+            'ingredient_amount_0': '100',
+            'ingredient_unit_0': 'g',
+            'ingredient_note_0': '',
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    with app.app_context():
+        recipe = Recipe.query.filter_by(name='Metric Recipe').one()
+        ingredient = Ingredient.query.filter_by(recipe_id=recipe.id).one()
+        assert ingredient.amount_per_gallon == pytest.approx(378.541)
+        recipe_id = recipe.id
+
+    detail = client.get(f'/app/recipes/{recipe_id}')
+    assert detail.status_code == 200
+    assert b'100.0 g Honey' in detail.data
+
+
+def test_metric_recipe_ingredient_amount_round_trips_on_edit(app, client):
+    admin_id = create_admin(app)
+    with app.app_context():
+        db.session.add(AppSettings(unit_preference='metric'))
+        recipe = Recipe(name='Metric Edit Recipe', content='Mix well', alcohol_type='Mead')
+        db.session.add(recipe)
+        db.session.flush()
+        db.session.add(
+            Ingredient(
+                recipe_id=recipe.id,
+                name='Honey',
+                amount_per_gallon=378.541,
+                unit='g',
+                note='',
+            )
+        )
+        db.session.commit()
+        recipe_id = recipe.id
+    login_as(client, admin_id)
+
+    edit_page = client.get(f'/app/recipes/{recipe_id}/edit')
+    assert edit_page.status_code == 200
+    assert b'name="ingredient_amount_0"' in edit_page.data
+    assert b'value="100.0"' in edit_page.data
+
+    response = client.post(
+        f'/app/recipes/{recipe_id}/edit',
+        data={
+            'name': 'Metric Edit Recipe',
+            'content': 'Mix well',
+            'alcohol_type': 'Mead',
+            'ingredient_name_0': 'Honey',
+            'ingredient_amount_0': '100',
+            'ingredient_unit_0': 'g',
+            'ingredient_note_0': '',
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    with app.app_context():
+        ingredient = Ingredient.query.filter_by(recipe_id=recipe_id).one()
+        assert ingredient.amount_per_gallon == pytest.approx(378.541)
+
+    detail = client.get(f'/app/recipes/{recipe_id}')
+    assert b'100.0 g Honey' in detail.data
+
+
+@pytest.mark.parametrize('gallons', [0, 1, 5, 12.5])
+def test_volume_conversion_round_trips(gallons):
+    assert liters_to_gallons(gallons_to_liters(gallons)) == pytest.approx(gallons)
+
+
+@pytest.mark.parametrize('amount_per_gallon', [0, 1, 100, 378.541])
+def test_ingredient_rate_conversion_round_trips(amount_per_gallon):
+    metric_rate = per_gallon_to_per_liter(amount_per_gallon)
+    assert per_liter_to_per_gallon(metric_rate) == pytest.approx(amount_per_gallon)
+
+
+@pytest.mark.parametrize('fahrenheit', [-40, 32, 68, 212])
+def test_temperature_conversion_round_trips(fahrenheit):
+    assert c_to_f(f_to_c(fahrenheit)) == pytest.approx(fahrenheit)
+
+
+def test_metric_batch_values_and_labels_round_trip(app, client):
+    admin_id = create_admin(app)
+    with app.app_context():
+        db.session.add(AppSettings(unit_preference='metric'))
+        recipe = Recipe(name='Metric Batch Recipe', alcohol_type='Mead')
+        db.session.add(recipe)
+        db.session.commit()
+        recipe_id = recipe.id
+    login_as(client, admin_id)
+
+    new_page = client.get('/app/batches/new')
+    assert b'Batch Size (liters)' in new_page.data
+    assert 'Fermentation Temp (°C)'.encode() in new_page.data
+
+    response = client.post(
+        '/app/batches/new',
+        data={
+            'name': 'Metric Batch',
+            'recipe_id': recipe_id,
+            'start_date': '2026-10-09',
+            'batch_size': '18.92705',
+            'initial_gravity': '1.100',
+            'final_gravity': '1.010',
+            'fermentation_temp': '20',
+            'enable_tosna': 'on',
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    with app.app_context():
+        batch = Batch.query.filter_by(name='Metric Batch').one()
+        assert batch.batch_size == pytest.approx(5)
+        assert float(batch.fermentation_temp) == pytest.approx(68)
+        assert batch.tosna_total == pytest.approx(15.14)
+        batch_id = batch.id
+
+    edit_page = client.get(f'/app/batches/{batch_id}/edit')
+    assert b'Batch Size (liters)' in edit_page.data
+    assert 'Fermentation Temp (°C)'.encode() in edit_page.data
+    assert b'value="18.93"' in edit_page.data
+    assert b'value="20.0"' in edit_page.data
+
+
+def test_metric_measurement_temperature_and_label_round_trip(app, client):
+    admin_id = create_admin(app)
+    with app.app_context():
+        db.session.add(AppSettings(unit_preference='metric'))
+        recipe = Recipe(name='Measurement Recipe', alcohol_type='Mead')
+        db.session.add(recipe)
+        db.session.flush()
+        batch = Batch(
+            recipe_id=recipe.id,
+            name='Measurement Batch',
+            start_date=datetime(2026, 10, 9),
+        )
+        db.session.add(batch)
+        db.session.commit()
+        batch_id = batch.id
+    login_as(client, admin_id)
+
+    form = client.get(f'/app/measurements/new?batch_id={batch_id}')
+    assert 'Temperature (°C)'.encode() in form.data
+
+    response = client.post(
+        f'/app/measurements/new?batch_id={batch_id}',
+        data={
+            'batch_id': batch_id,
+            'date': '2026-10-09',
+            'gravity': '1.050',
+            'ph': '3.5',
+            'temperature': '20',
+            'notes': 'Metric reading',
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    with app.app_context():
+        measurement = Measurement.query.one()
+        assert measurement.temperature == pytest.approx(68)
+
+    detail = client.get(f'/app/batches/{batch_id}')
+    assert '20.0 °C (68.0 °F)'.encode() in detail.data
+
+
+def test_metric_calculators_apply_volume_and_mass_conversions(app, client):
+    admin_id = create_admin(app)
+    with app.app_context():
+        db.session.add(AppSettings(unit_preference='metric'))
+        db.session.commit()
+    login_as(client, admin_id)
+
+    honey = client.post(
+        '/app/calculator/honey-needed',
+        data={'volume': '18.92705', 'target_gravity': '1.100'},
+    )
+    assert b'0.61 kg' in honey.data
+
+    carbonation = client.post(
+        '/app/calculator/carbonation',
+        data={'volume': '18.92705', 'target_co2': '2.5'},
+    )
+    assert b'116.8 grams' in carbonation.data
+
+    tosna = client.post(
+        '/app/calculator/tosna',
+        data={'batch_size': '18.92705', 'starting_gravity': '1.100'},
+    )
+    assert b'<strong>15.14</strong> g' in tosna.data
+
+
+def test_temperature_correction_uses_matching_units_and_form_fields(app, client):
+    admin_id = create_admin(app)
+    with app.app_context():
+        settings = AppSettings(unit_preference='metric')
+        db.session.add(settings)
+        db.session.commit()
+        settings_id = settings.id
+    login_as(client, admin_id)
+
+    metric_form = client.get('/app/calculator/temp-correction')
+    assert 'Sample Temperature (°C)'.encode() in metric_form.data
+    metric = client.post(
+        '/app/calculator/temp-correction',
+        data={'reading': '1.050', 'sample_temp': '25', 'calibration_temp': '20'},
+    )
+    assert b'<strong>1.059</strong>' in metric.data
+
+    with app.app_context():
+        settings = db.session.get(AppSettings, settings_id)
+        settings.unit_preference = 'imperial'
+        db.session.commit()
+
+    imperial_form = client.get('/app/calculator/temp-correction')
+    assert 'Sample Temperature (°F)'.encode() in imperial_form.data
+    imperial = client.post(
+        '/app/calculator/temp-correction',
+        data={'reading': '1.050', 'sample_temp': '77', 'calibration_temp': '68'},
+    )
+    assert b'<strong>1.059</strong>' in imperial.data
 
 
 def test_reset_requires_login_without_recovery_flag(app, client):

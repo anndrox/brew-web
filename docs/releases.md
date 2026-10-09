@@ -44,6 +44,13 @@ than a stored personal access token. It emits image provenance and an SBOM. It
 runs on GitHub's hosted runner; this does not grant Docker socket access or image
 publishing authority to the separate Forgejo runner.
 
+Ordinary pull-request CI builds the candidate image and runs
+`tests/upgrade/verify_container_upgrade.sh` against ephemeral PostgreSQL. The test
+seeds representative v1.4 data, exercises both the one-time compatibility path and
+an idempotent second startup, and fails if data, relationships, compatibility
+columns, or the expected Alembic revision are missing. The containers, network,
+and database volume are runner-local and removed after the job.
+
 Thanks to [jrhedman](https://github.com/jrhedman) for proposing release image
 publishing and identifying the missing user-facing release in
 [PR #5](https://github.com/anndrox/brew-web/pull/5).

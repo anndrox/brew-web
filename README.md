@@ -19,6 +19,20 @@ container with PostgreSQL and is designed to sit behind an HTTPS reverse proxy.
 - Versioned database migrations and automatic startup upgrades
 - CSRF-protected calendar changes and browser security headers
 
+## Maintenance and support
+
+Brew-Web is maintained on a best-effort basis rather than an active feature
+roadmap. Reproducible defects and security issues are prioritized as maintainer
+time permits, but response, review, and release times are not guaranteed. Feature
+requests are welcome for discussion and may remain open until a contributor is
+available to implement them.
+
+For a stable installation, pin a numbered release instead of `latest`, keep a
+verified PostgreSQL backup outside the container host, read release notes before
+upgrading, and validate the upgrade in a non-production copy when practical. Use
+the issue forms for reproducible bugs, and report suspected vulnerabilities
+privately as described in [SECURITY.md](SECURITY.md).
+
 ## Quick start
 
 Requirements: Git, Docker Engine or Docker Desktop, and Docker Compose v2.
@@ -82,6 +96,12 @@ Copy `.env.example` to `.env`; `.env` is intentionally ignored by Git.
 Runtime data is stored in the `pgdata` Docker volume and the local `instance/`,
 `logs/`, and `backups/` directories. Do not commit any of those contents.
 
+The administrator's unit preference controls data entry and display. Brew-Web
+stores batch volume in gallons, temperature in degrees Fahrenheit, and recipe
+ingredient rates per gallon, then converts those canonical values at the user
+interface boundary. Switching between imperial and metric therefore changes the
+display without rewriting or compounding stored measurements.
+
 ## Upgrading and backups
 
 Create and download a backup from **Settings → Administration** before every
@@ -103,6 +123,13 @@ Committed Alembic migrations are applied automatically. Existing unversioned v1.
 databases receive a one-time compatibility repair before being marked at the
 baseline. `docker compose down` preserves data; do not add `--volumes` unless you
 intentionally want to erase the database.
+
+CI also exercises this upgrade path against an isolated PostgreSQL database. It
+seeds representative account, settings, yeast, recipe, batch, ingredient,
+measurement, and calendar data, starts the current image twice, and verifies the
+rows and relationships remain intact after the compatibility repair and Alembic
+migration. This guards the supported upgrade path; creating a backup before an
+upgrade remains required operational practice.
 
 ## Development
 

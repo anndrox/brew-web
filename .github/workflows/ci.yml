@@ -52,3 +52,5 @@ jobs:
         run: docker compose config --quiet
       - name: Build image
         run: docker build --tag brewweb:ci .
+      - name: Verify legacy database upgrade preserves data
+        run: sh tests/upgrade/verify_container_upgrade.sh brewweb:ci

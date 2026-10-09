@@ -151,7 +151,7 @@ def edit_batch(batch_id):
         batch=batch,
         recipes=recipes,
         yeasts=yeasts,
-        selected_units=selected_units,
+        unit_preference=selected_units,
         display_batch_size=display_batch_size,
         fermentation_temp_display=fermentation_temp_display,
     )
@@ -240,7 +240,7 @@ def new_batch():
         )
 
         if tosna_enabled and batch_size and initial_gravity and initial_gravity >= 1.050:
-            must_liters = batch_size * 3.78541 if units == 'imperial' else input_batch_size
+            must_liters = gallons_to_liters(batch_size)
             tosna_total = round(0.8 * must_liters, 2)
             tosna_per_day = round(tosna_total / 4, 2)
         elif tosna_enabled:
@@ -279,7 +279,7 @@ def new_batch():
         recipes=recipes,
         yeasts=yeasts,
         show_warning=show_warning,
-        selected_units=get_unit_preference(),
+        unit_preference=get_unit_preference(),
     )
     
 ### Calculator additions ###
@@ -299,7 +299,7 @@ def calculate_tosna(batch_id):
         return redirect(url_for('routes.batches_bp.view_batch', batch_id=batch.id))
 
     # Calculate TOSNA
-    must_liters = batch.batch_size * 3.78541
+    must_liters = gallons_to_liters(batch.batch_size)
     total = round(0.8 * must_liters, 2)
     per_day = round(total / 4, 2)
 

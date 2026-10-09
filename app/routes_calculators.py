@@ -1,8 +1,6 @@
 from flask import Blueprint, render_template, request
 from flask_login import login_required
-from app.utils import get_unit_preference, gallons_to_liters, liters_to_gallons
-
-GALLON_TO_LITER = 3.78541
+from app.utils import c_to_f, get_unit_preference, gallons_to_liters, liters_to_gallons
 
 calculator_bp = Blueprint('calculator_bp', __name__, url_prefix='/calculator')
 
@@ -198,7 +196,7 @@ def calculator_tosna():
             if starting_gravity < 1.050:
                 result = "OG too low for TOSNA."
             else:
-                must_liters = batch_size * GALLON_TO_LITER
+                must_liters = gallons_to_liters(batch_size)
                 total = round(0.8 * must_liters, 2)
                 per_day = round(total / 4, 2)
                 result = type('TOSNAResult', (object,), {"total": total, "per_day": per_day})()
@@ -215,10 +213,13 @@ def calculator_temp_correction():
     units = get_unit_preference()
     if request.method == 'POST':
         try:
-            observed = float(request.form['observed'])
-            temp_input = float(request.form['temp'])
-            temp_f = temp_input if units == 'imperial' else (temp_input * 9/5) + 32
-            correction = (temp_f - 60) * 0.001
+            observed = float(request.form['reading'])
+            sample_temp = float(request.form['sample_temp'])
+            calibration_temp = float(request.form['calibration_temp'])
+            if units == 'metric':
+                sample_temp = c_to_f(sample_temp)
+                calibration_temp = c_to_f(calibration_temp)
+            correction = (sample_temp - calibration_temp) * 0.001
             corrected = round(observed + correction, 3)
             result = corrected
         except (KeyError, TypeError, ValueError):
