@@ -64,7 +64,12 @@ def new_measurement():
             traceback.print_exc()
             raise
 
-    return render_template('new_measurement.html', batches=batches, selected_id=selected_id)
+    return render_template(
+        'new_measurement.html',
+        batches=batches,
+        selected_id=selected_id,
+        unit_preference=units,
+    )
 
 @routes.route('/measurements/<int:measurement_id>/delete', methods=['POST'])
 @login_required

@@ -42,7 +42,7 @@
       {% set i = loop.index0 %}
       <div class="ingredient-row" style="margin-bottom: 10px;">
         <input name="ingredient_name_{{ i }}" placeholder="Name" type="text" value="{{ ingredient.name }}"/>
-        <input name="ingredient_amount_{{ i }}" placeholder="Amount" step="0.01" type="number" value="{{ gallons_to_liters(ingredient.amount_per_gallon) if unit_preference == 'metric' else ingredient.amount_per_gallon }}"/>
+        <input name="ingredient_amount_{{ i }}" placeholder="Amount" step="0.01" type="number" value="{{ per_gallon_to_per_liter(ingredient.amount_per_gallon) if unit_preference == 'metric' else ingredient.amount_per_gallon }}"/>
         <input name="ingredient_unit_{{ i }}" placeholder="Unit" type="text" value="{{ ingredient.unit }}"/>
         <input name="ingredient_note_{{ i }}" placeholder="Note (optional)" type="text" value="{{ ingredient.note }}"/>
         <button onclick="confirmRemove(this)" type="button">❌</button>

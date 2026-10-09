@@ -82,6 +82,12 @@ Copy `.env.example` to `.env`; `.env` is intentionally ignored by Git.
 Runtime data is stored in the `pgdata` Docker volume and the local `instance/`,
 `logs/`, and `backups/` directories. Do not commit any of those contents.
 
+The administrator's unit preference controls data entry and display. Brew-Web
+stores batch volume in gallons, temperature in degrees Fahrenheit, and recipe
+ingredient rates per gallon, then converts those canonical values at the user
+interface boundary. Switching between imperial and metric therefore changes the
+display without rewriting or compounding stored measurements.
+
 ## Upgrading and backups
 
 Create and download a backup from **Settings → Administration** before every

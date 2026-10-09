@@ -102,11 +102,21 @@ def read_import_status_file():
     except Exception:
         return None
 # --- Unit helpers ---
+GALLON_TO_LITER = 3.78541
+
 def gallons_to_liters(gallons):
-    return gallons * 3.78541 if gallons is not None else None
+    return gallons * GALLON_TO_LITER if gallons is not None else None
 
 def liters_to_gallons(liters):
-    return liters / 3.78541 if liters is not None else None
+    return liters / GALLON_TO_LITER if liters is not None else None
+
+def per_liter_to_per_gallon(amount_per_liter):
+    """Convert an ingredient rate for one liter to the equivalent rate for one gallon."""
+    return amount_per_liter * GALLON_TO_LITER if amount_per_liter is not None else None
+
+def per_gallon_to_per_liter(amount_per_gallon):
+    """Convert an ingredient rate for one gallon to the equivalent rate for one liter."""
+    return amount_per_gallon / GALLON_TO_LITER if amount_per_gallon is not None else None
 
 def f_to_c(fahrenheit):
     return (fahrenheit - 32) * 5 / 9 if fahrenheit is not None else None
