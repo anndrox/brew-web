@@ -17,7 +17,7 @@
         const resp = await fetch('{{ url_for("routes.admin_bp.import_status") }}', { headers: { 'Accept': 'application/json' }});
         if (!resp.ok) return;
         const data = await resp.json();
-        box.innerHTML = `<strong>Status:</strong> ${data.message}`;
+        box.textContent = `Status: ${data.message}`;
         if (data.status === 'running') {
           setTimeout(poll, refreshMs);
         }

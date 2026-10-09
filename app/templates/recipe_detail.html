@@ -11,7 +11,7 @@
   {% endif %}
 </p>
 <h3>Instructions</h3>
-<p>{{ recipe.content.replace('\n', '<br>') | safe }}</p>
+<div class="recipe-instructions">{{ recipe.content | instructions_html }}</div>
 <h3>Ingredients (per {{ display_unit }})</h3>
 {% if ingredients_view %}
   <ul>
@@ -47,10 +47,15 @@
 </form>
 
 <p>
-  <a href="{{ url_for('routes.recipes_bp.edit_recipe', recipe_id=recipe.id) }}">✏️ Edit Recipe</a> |
+  {% if current_user.role in ('admin', 'editor') %}
+  <a href="{{ url_for('routes.recipes_bp.edit_recipe', recipe_id=recipe.id) }}">✏️ Edit Recipe</a>
+  {% endif %}
+  {% if current_user.role == 'admin' %}
   <form action="{{ url_for('routes.recipes_bp.delete_recipe', recipe_id=recipe.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this recipe?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" style="color: red;">🗑 Delete</button>
   </form>
+  {% endif %}
 </p>
 
 <p><a href="{{ url_for('routes.index') }}">← Back to Home</a></p>

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>TOSNA Nutrient Calculator</h1>
+<p>This is the legacy simplified 0.8 g/L, four-part nutrient estimate, not a full tailored TOSNA/YAN calculation. Check your yeast and nutrient manufacturer's guidance; weigh additions rather than relying on spoon estimates.</p>
 <form method="POST">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 

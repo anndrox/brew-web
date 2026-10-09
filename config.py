@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from sqlalchemy.engine import URL
 
@@ -11,7 +12,7 @@ def _env_bool(name, default=False):
 
 
 class Config:
-    VERSION = "1.4.0"
+    VERSION = (Path(__file__).resolve().parent / 'VERSION').read_text().strip()
     SECRET_KEY = os.environ.get('SECRET_KEY')
     if not SECRET_KEY or SECRET_KEY in {'changeme-in-production', 'replace-with-a-random-secret'}:
         raise RuntimeError("SECRET_KEY must be set in environment (see .env.example).")

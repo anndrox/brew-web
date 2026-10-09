@@ -9,7 +9,7 @@ from flask_migrate import Migrate
 from flask_login import LoginManager, current_user
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from app.utils import check_for_updates, get_unit_preference
+from app.utils import check_for_updates, get_unit_preference, sanitize_instructions
 from config import Config
 from markupsafe import Markup, escape
 from flask_wtf import CSRFProtect
@@ -102,6 +102,10 @@ def create_app():
     def nl2br_filter(s):
         return Markup('<br>'.join(escape(s).splitlines()))
 
+    @app.template_filter('instructions_html')
+    def instructions_filter(content):
+        return Markup(sanitize_instructions((content or '').replace('\n', '<br>')))
+
     from . import routes
     app.register_blueprint(routes.routes)
 
@@ -153,14 +157,12 @@ def create_app():
             "default-src 'self'; "
             "base-uri 'self'; "
             "connect-src 'self'; "
-            "font-src 'self' https://cdn.quilljs.com; "
+            "font-src 'self'; "
             "form-action 'self'; "
             "frame-ancestors 'self'; "
             "img-src 'self' data:; "
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net "
-            "https://cdn.quilljs.com; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net "
-            "https://cdn.quilljs.com",
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'",
         )
         if current_user.is_authenticated:
             response.headers.setdefault('Cache-Control', 'no-store')
@@ -220,5 +222,14 @@ def create_app():
             db.session.add(Yeast(**data, is_default=True))
         db.session.commit()
         print("✅ Yeast table seeded.")
+
+    @app.cli.command('prepare-schema')
+    @with_appcontext
+    def prepare_schema_command():
+        from app.database import prepare_schema
+        with db.engine.begin() as connection:
+            connection.execute(text('SELECT pg_advisory_xact_lock(4452, 1)'))
+            prepare_schema(connection)
+        print('Database schema compatibility verified.')
 
     return app

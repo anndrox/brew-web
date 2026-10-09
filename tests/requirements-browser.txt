@@ -1,0 +1,2 @@
+# Runner-only Chromium smoke tests; not a production/container dependency.
+playwright==1.63.0

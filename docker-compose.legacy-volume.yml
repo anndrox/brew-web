@@ -1,0 +1,6 @@
+# Explicit upgrade-only opt-in: refuses to create a missing/renamed data volume.
+# Use BOTH files: docker compose -f docker-compose.yml -f docker-compose.legacy-volume.yml ...
+volumes:
+  pgdata:
+    external: true
+    name: ${BREWWEB_DATA_VOLUME:?Set BREWWEB_DATA_VOLUME to the verified existing PostgreSQL 15 volume}
