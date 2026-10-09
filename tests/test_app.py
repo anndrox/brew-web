@@ -272,6 +272,37 @@ def test_metric_calculators_apply_volume_and_mass_conversions(app, client):
     assert b'<strong>15.14</strong> g' in tosna.data
 
 
+def test_temperature_correction_uses_matching_units_and_form_fields(app, client):
+    admin_id = create_admin(app)
+    with app.app_context():
+        settings = AppSettings(unit_preference='metric')
+        db.session.add(settings)
+        db.session.commit()
+        settings_id = settings.id
+    login_as(client, admin_id)
+
+    metric_form = client.get('/app/calculator/temp-correction')
+    assert 'Sample Temperature (°C)'.encode() in metric_form.data
+    metric = client.post(
+        '/app/calculator/temp-correction',
+        data={'reading': '1.050', 'sample_temp': '25', 'calibration_temp': '20'},
+    )
+    assert b'<strong>1.059</strong>' in metric.data
+
+    with app.app_context():
+        settings = db.session.get(AppSettings, settings_id)
+        settings.unit_preference = 'imperial'
+        db.session.commit()
+
+    imperial_form = client.get('/app/calculator/temp-correction')
+    assert 'Sample Temperature (°F)'.encode() in imperial_form.data
+    imperial = client.post(
+        '/app/calculator/temp-correction',
+        data={'reading': '1.050', 'sample_temp': '77', 'calibration_temp': '68'},
+    )
+    assert b'<strong>1.059</strong>' in imperial.data
+
+
 def test_reset_requires_login_without_recovery_flag(app, client):
     create_admin(app)
 

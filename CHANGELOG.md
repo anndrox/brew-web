@@ -25,6 +25,8 @@
   round-trip without applying the gallon/liter factor twice.
 - Corrected metric unit labels on batch and measurement forms and centralized volume and
   temperature conversions used by batch TOSNA and calculator paths.
+- Repaired the hydrometer temperature-correction form and made its sample and calibration
+  temperatures honor the selected unit system.
 - Protected password recovery and import status endpoints from unauthenticated access.
 - Restored the CSRF token in the recovery form and enabled login rate limiting.
 - Fixed metric recipe conversion and persisted calculated ABV for new batches.

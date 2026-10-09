@@ -213,10 +213,13 @@ def calculator_temp_correction():
     units = get_unit_preference()
     if request.method == 'POST':
         try:
-            observed = float(request.form['observed'])
-            temp_input = float(request.form['temp'])
-            temp_f = temp_input if units == 'imperial' else c_to_f(temp_input)
-            correction = (temp_f - 60) * 0.001
+            observed = float(request.form['reading'])
+            sample_temp = float(request.form['sample_temp'])
+            calibration_temp = float(request.form['calibration_temp'])
+            if units == 'metric':
+                sample_temp = c_to_f(sample_temp)
+                calibration_temp = c_to_f(calibration_temp)
+            correction = (sample_temp - calibration_temp) * 0.001
             corrected = round(observed + correction, 3)
             result = corrected
         except (KeyError, TypeError, ValueError):
