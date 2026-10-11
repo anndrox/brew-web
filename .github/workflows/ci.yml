@@ -16,6 +16,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  workflow-lint:
+    name: GitHub workflow validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate every GitHub workflow with pinned actionlint
+        run: |
+          tool_dir="$(mktemp -d)"
+          trap 'rm -f "$tool_dir/actionlint.tar.gz" "$tool_dir/actionlint"; rmdir "$tool_dir"' EXIT
+          curl --fail --show-error --location --retry 3 \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+            --output "$tool_dir/actionlint.tar.gz"
+          printf '%s  %s\n' \
+            '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8' \
+            "$tool_dir/actionlint.tar.gz" | sha256sum --check
+          tar --extract --gzip --file "$tool_dir/actionlint.tar.gz" --directory "$tool_dir" actionlint
+          "$tool_dir/actionlint" -shellcheck= -pyflakes=
+
   test:
     name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
