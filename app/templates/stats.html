@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% block head %}
+<script src="{{ url_for('static', filename='vendor/chartjs-4.5.1/chart.umd.min.js') }}"></script>
+{% endblock %}
 {% block content %}
 <h1>📊 Mead Batch Statistics</h1>
 

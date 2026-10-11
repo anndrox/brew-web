@@ -2,6 +2,45 @@
 
 ## [Unreleased]
 
+## [v1.4.1] - Candidate for 2026-10-11
+
+### Fixed
+
+- Validate recognized v1.3.1/v1.4 schemas before replacing old generated Alembic
+  metadata, add missing batch size, retain historical values and advance serial
+  sequences safely. Unknown layouts stop startup instead of being stamped as head.
+- Restore trusted SQL/COPY/custom-format pg_dump backups in one transaction,
+  validate schema/admin before commit, roll back on failure, coordinate restores
+  with a database lock and avoid overwriting existing backup files on upload.
+- Preserve remaining ingredients when first/middle rows are removed; reject
+  invalid rows before replacing the original recipe/ingredients.
+- Sanitize stored recipe HTML and JSON-encode editor initialization; restore
+  recipe-delete CSRF protection and role-aware controls.
+- Show cider and historical categories, support the viewer role label and apply
+  font-size preferences. Preserve ingredient numerator units when changing rates.
+- Correct gravity-point dilution, honey/sweetness/recovery estimates, hydrometer
+  density correction and temperature-dependent corn-sugar estimates; document
+  formula assumptions and the simplified legacy nutrient schedule.
+- Cache offline update failures and notify only for newer published releases.
+
+### Changed
+
+- Bundle pinned Quill 2.0.3, Chart.js 4.5.1 and FullCalendar 6.1.20 with licenses;
+  no runtime CDN dependency. Save semantic recipe HTML to retain list formatting.
+- Add a required-existing-volume upgrade override, bounded database connection
+  wait and Docker log rotation without changing PostgreSQL major or worker count.
+- Gate image publishing on the full reusable GitHub CI workflow, verify version
+  tags and document changed instructions alongside their regression tests.
+
+### Verification
+
+- Added GitHub-only PostgreSQL upgrade/restore, published-image upgrade, explicit
+  volume reuse and offline browser checks. No local Docker Desktop is required.
+- This is a candidate until the scheduled publication checks complete. Numbered
+  image tags and the release page are not published early.
+
+### Previously integrated maintenance
+
 ### Added
 
 - CI across Python 3.11 and 3.13, dependency auditing, CodeQL analysis, and GHCR publishing.

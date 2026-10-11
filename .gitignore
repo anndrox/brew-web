@@ -33,3 +33,4 @@ htmlcov/
 logs/*
 !logs/.gitkeep
 *.log
+.work/

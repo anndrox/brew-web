@@ -2,16 +2,29 @@
 set -eu
 
 image="${1:-brewweb:ci}"
+published_image='ghcr.io/anndrox/brew-web@sha256:903a350b742d817885a62f6ca17d67afe99ff8a997aa3bc8bddd87095def7f73'
+run_image="$image"
 network="brewweb-upgrade-$$"
 database_container="brewweb-upgrade-db-$$"
 web_container="brewweb-upgrade-web-$$"
+startup_container="brewweb-startup-check-$$"
 database_password="upgrade-test-only"
 
 cleanup() {
-  docker rm -fv "$web_container" "$database_container" >/dev/null 2>&1 || true
+  docker rm -fv "$web_container" "$database_container" "$startup_container" >/dev/null 2>&1 || true
   docker network rm "$network" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT INT TERM
+
+if startup_log="$(docker run --rm --name "$startup_container" \
+  --env SECRET_KEY=startup-validation-only \
+  --env POSTGRES_PASSWORD=startup-validation-only \
+  --env POSTGRES_HOST=missing.invalid \
+  --env DB_WAIT_TIMEOUT=2 "$image" 2>&1)"; then
+  printf '%s\n' 'ERROR: startup accepted an unreachable database.' >&2
+  exit 1
+fi
+printf '%s' "$startup_log" | grep -q 'PostgreSQL connection timed out'
 
 docker network create "$network" >/dev/null
 docker run --detach --name "$database_container" --network "$network" \
@@ -22,7 +35,7 @@ docker run --detach --name "$database_container" --network "$network" \
   >/dev/null
 
 attempt=0
-until docker exec "$database_container" pg_isready -U brewuser -d brewweb >/dev/null 2>&1; do
+until docker exec "$database_container" psql -U brewuser -d brewweb -tAc 'SELECT 1' >/dev/null 2>&1; do
   attempt=$((attempt + 1))
   if [ "$attempt" -ge 30 ]; then
     docker logs "$database_container"
@@ -48,7 +61,7 @@ start_web() {
     --env POSTGRES_USER=brewuser \
     --env POSTGRES_PASSWORD="$database_password" \
     --env POSTGRES_DB=brewweb \
-    "$image" >/dev/null
+    "$run_image" >/dev/null
 
   attempt=0
   until [ "$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$web_container")" = healthy ]; do
@@ -67,7 +80,24 @@ verify_data() {
     < tests/upgrade/verify_preserved_data.sql
 }
 
-# First startup exercises the unversioned v1.4 compatibility path.
+# First prove the currently published v1.4.0 image's database can be opened by
+# the candidate; same database, credentials, mounts, data and PostgreSQL major.
+run_image="$published_image"
+start_web
+verify_data
+docker rm -fv "$web_container" >/dev/null
+run_image="$image"
+start_web
+verify_data
+docker rm -fv "$web_container" >/dev/null
+
+# Reset ONLY the disposable runner database, never a user volume, to exercise
+# the unversioned schema separately from the published/versioned installation.
+docker exec "$database_container" psql --set ON_ERROR_STOP=1 --username brewuser --dbname brewweb \
+  -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+docker exec --interactive "$database_container" psql \
+  --set ON_ERROR_STOP=1 --username brewuser --dbname brewweb \
+  < tests/upgrade/legacy_v1_4.sql
 start_web
 verify_data
 
@@ -76,4 +106,4 @@ docker rm -fv "$web_container" >/dev/null
 start_web
 verify_data
 
-printf '%s\n' 'Legacy database upgrade preserved all representative data on both startups.'
+printf '%s\n' 'Published v1.4.0 upgrade, unversioned compatibility and second startup preserved representative data.'

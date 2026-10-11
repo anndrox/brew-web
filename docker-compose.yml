@@ -6,6 +6,11 @@ services:
       context: .
     image: ${BREWWEB_IMAGE:-ghcr.io/anndrox/brew-web:latest}
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     init: true
     ports:
       - "${BREWWEB_BIND:-127.0.0.1}:${BREWWEB_PORT:-4452}:4452"
@@ -19,6 +24,7 @@ services:
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
       RATELIMIT_STORAGE_URI: ${RATELIMIT_STORAGE_URI:-memory://}
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-1}
+      DB_WAIT_TIMEOUT: ${DB_WAIT_TIMEOUT:-60}
     depends_on:
       db:
         condition: service_healthy
@@ -35,6 +41,11 @@ services:
   db:
     image: postgres:15-alpine@sha256:fe0737ba566a2c5b2a28f34433c0a423261900ec17b9bf7ad115e1aae7e57f1b
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-brewuser}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}

@@ -5,11 +5,10 @@
     <title>Brew Log</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='calculators.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% block head %}{% endblock %}
 </head>
 
-<body class="{% if current_user.is_authenticated and current_user.theme == 'light' %}light-mode{% else %}dark-mode{% endif %}">
+<body style="font-size: {{ current_user.font_size if current_user.is_authenticated and current_user.font_size in ('14px', '16px', '18px') else '16px' }}" class="{% if current_user.is_authenticated and current_user.theme == 'light' %}light-mode{% else %}dark-mode{% endif %}">
     <div class="page-container">
         <nav class="sidebar">
             <div>

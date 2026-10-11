@@ -257,13 +257,13 @@ def test_metric_calculators_apply_volume_and_mass_conversions(app, client):
         '/app/calculator/honey-needed',
         data={'volume': '18.92705', 'target_gravity': '1.100'},
     )
-    assert b'0.61 kg' in honey.data
+    assert b'6.48 kg' in honey.data  # 500 points / 35 PPG, converted once.
 
     carbonation = client.post(
         '/app/calculator/carbonation',
         data={'volume': '18.92705', 'target_co2': '2.5'},
     )
-    assert b'116.8 grams' in carbonation.data
+    assert b'136.32 grams' in carbonation.data
 
     tosna = client.post(
         '/app/calculator/tosna',
@@ -287,7 +287,7 @@ def test_temperature_correction_uses_matching_units_and_form_fields(app, client)
         '/app/calculator/temp-correction',
         data={'reading': '1.050', 'sample_temp': '25', 'calibration_temp': '20'},
     )
-    assert b'<strong>1.059</strong>' in metric.data
+    assert b'<strong>1.051</strong>' in metric.data
 
     with app.app_context():
         settings = db.session.get(AppSettings, settings_id)
@@ -300,7 +300,7 @@ def test_temperature_correction_uses_matching_units_and_form_fields(app, client)
         '/app/calculator/temp-correction',
         data={'reading': '1.050', 'sample_temp': '77', 'calibration_temp': '68'},
     )
-    assert b'<strong>1.059</strong>' in imperial.data
+    assert b'<strong>1.051</strong>' in imperial.data
 
 
 def test_reset_requires_login_without_recovery_flag(app, client):

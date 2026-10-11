@@ -1,4 +1,7 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+import math
+import re
+
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required
 from app.models import db, Recipe, Ingredient, Yeast
 from app.utils import (
@@ -6,9 +9,46 @@ from app.utils import (
     per_gallon_to_per_liter,
     per_liter_to_per_gallon,
     role_required,
+    sanitize_instructions,
 )
 
 recipes_bp = Blueprint("recipes_bp", __name__)
+
+
+def _submitted_recipe(units):
+    """Validate every remaining row before mutating the existing recipe."""
+    name = (request.form.get('name') or '').strip()
+    if not name or len(name) > 100:
+        abort(400, 'Recipe name must contain 1–100 characters.')
+    yeast_id = request.form.get('yeast_id') or None
+    if yeast_id:
+        try:
+            yeast_id = int(yeast_id)
+        except ValueError:
+            abort(400, 'Invalid yeast selection.')
+        db.get_or_404(Yeast, yeast_id)
+    indices = sorted({int(match.group(1)) for key in request.form
+                      if (match := re.fullmatch(r'ingredient_(?:name|amount|unit|note)_(\d+)', key))})
+    ingredients = []
+    for i in indices:
+        row = {field: (request.form.get(f'ingredient_{field}_{i}') or '').strip()
+               for field in ('name', 'amount', 'unit', 'note')}
+        if not any(row.values()):
+            continue  # Empty optional row, not an end-of-list sentinel.
+        try:
+            amount = float(row['amount'])
+        except ValueError:
+            abort(400, 'Each ingredient needs a finite nonnegative amount.')
+        if (not row['name'] or len(row['name']) > 100 or not row['unit']
+                or len(row['unit']) > 20 or len(row['note']) > 200
+                or not math.isfinite(amount) or amount < 0):
+            abort(400, 'Invalid ingredient row; existing ingredients were not changed.')
+        canonical_amount = per_liter_to_per_gallon(amount) if units == 'metric' else amount
+        if not math.isfinite(canonical_amount):
+            abort(400, 'Ingredient amount is too large.')
+        ingredients.append({'name': row['name'], 'unit': row['unit'], 'note': row['note'],
+                            'amount_per_gallon': canonical_amount})
+    return name, yeast_id, ingredients
 
 @recipes_bp.route('/recipes')
 @login_required
@@ -20,39 +60,22 @@ def recipes():
 @role_required('admin', 'editor')
 def new_recipe():
     if request.method == 'POST':
-        name = request.form['name']
-        content = request.form['content']
         units = get_unit_preference()
-        display_unit = 'liter' if units == 'metric' else 'gallon'
+        name, yeast_id, ingredients = _submitted_recipe(units)
+        content = sanitize_instructions(request.form.get('content', ''))
 
         recipe = Recipe(
             name=name,
             content=content,
             alcohol_type=request.form.get('alcohol_type') or None,
             water_type=request.form.get('water_type') or None,
-            yeast_id=request.form.get('yeast_id') or None  # ✅ yeast_id is here
+            yeast_id=yeast_id
         )
         db.session.add(recipe)
         db.session.flush()
 
-        i = 0
-        while True:
-            name_key = f"ingredient_name_{i}"
-            if not request.form.get(name_key):
-                break
-            amount_raw = float(request.form.get(f"ingredient_amount_{i}") or 0)
-            amount_per_gal = (
-                per_liter_to_per_gallon(amount_raw) if units == 'metric' else amount_raw
-            )
-            ingredient = Ingredient(
-                recipe_id=recipe.id,
-                name=request.form.get(name_key),
-                amount_per_gallon=amount_per_gal,
-                unit=request.form.get(f"ingredient_unit_{i}"),
-                note=request.form.get(f"ingredient_note_{i}") or ""
-            )
-            db.session.add(ingredient)
-            i += 1
+        for fields in ingredients:
+            db.session.add(Ingredient(recipe_id=recipe.id, **fields))
 
         db.session.commit()
         flash("New recipe with ingredients added.", "success")
@@ -69,18 +92,19 @@ def view_recipe(recipe_id):
     recipe = db.get_or_404(Recipe, recipe_id)
     units = get_unit_preference()
     target_batch = request.args.get('target_batch', type=float, default=1)
+    if not math.isfinite(target_batch) or target_batch <= 0:
+        abort(400, 'Batch size must be positive and finite.')
     display_unit = 'liter' if units == 'metric' else 'gallon'
 
     ingredients_view = []
     for ing in recipe.ingredients:
         unit_label = ing.unit or ''
-        # Normalize “gallon(s)” label when showing metric
-        if units == 'metric' and unit_label.lower() in ['gallon', 'gallons']:
-            unit_label = 'liters'
-
+        # The denominator changes (per gallon -> per liter), not the ingredient's
+        # numerator unit. A quantity labelled gallons must remain gallons.
         if units == 'metric':
-            base_amount = round(per_gallon_to_per_liter(ing.amount_per_gallon or 0), 2)
-            scaled_amount = round(base_amount * target_batch, 2)
+            unrounded = per_gallon_to_per_liter(ing.amount_per_gallon or 0)
+            base_amount = round(unrounded, 2)
+            scaled_amount = round(unrounded * target_batch, 2)
         else:
             base_amount = ing.amount_per_gallon or 0
             scaled_amount = round(base_amount * target_batch, 2)
@@ -109,33 +133,17 @@ def edit_recipe(recipe_id):
     recipe = db.get_or_404(Recipe, recipe_id)
     if request.method == 'POST':
         units = get_unit_preference()
-        display_unit = 'liter' if units == 'metric' else 'gallon'
-        recipe.name = request.form['name']
-        recipe.content = request.form['content']
+        name, yeast_id, ingredients = _submitted_recipe(units)
+        recipe.name = name
+        recipe.content = sanitize_instructions(request.form.get('content', ''))
         recipe.alcohol_type = request.form.get('alcohol_type') or None
         recipe.water_type = request.form.get('water_type') or None
-        recipe.yeast_id = request.form.get('yeast_id') or None
+        recipe.yeast_id = yeast_id
 
         Ingredient.query.filter_by(recipe_id=recipe.id).delete()
 
-        i = 0
-        while True:
-            name_key = f"ingredient_name_{i}"
-            if not request.form.get(name_key):
-                break
-            amount_raw = float(request.form.get(f"ingredient_amount_{i}") or 0)
-            amount_per_gal = (
-                per_liter_to_per_gallon(amount_raw) if units == 'metric' else amount_raw
-            )
-            ingredient = Ingredient(
-                recipe_id=recipe.id,
-                name=request.form.get(name_key),
-                amount_per_gallon=amount_per_gal,
-                unit=request.form.get(f"ingredient_unit_{i}"),
-                note=request.form.get(f"ingredient_note_{i}") or ""
-            )
-            db.session.add(ingredient)
-            i += 1
+        for fields in ingredients:
+            db.session.add(Ingredient(recipe_id=recipe.id, **fields))
 
         db.session.commit()
         flash('Recipe updated successfully!', 'success')

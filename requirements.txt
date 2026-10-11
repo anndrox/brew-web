@@ -7,3 +7,4 @@ Flask-WTF==1.3.0
 gunicorn==26.2.0
 psycopg2-binary==2.9.12
 requests==2.34.2
+nh3==0.3.7

@@ -3,6 +3,7 @@
 <h1>Carbonation Calculator</h1>
 
 <p>Calculate the amount of priming sugar needed to carbonate your mead based on target CO₂ volumes.</p>
+<p>Estimate for corn sugar (91% fermentable), not honey or table sugar. Confirm fermentation has finished, measure sugar by weight, and use pressure-rated bottles. Do not bottle sweetened or actively fermenting mead using this estimate.</p>
 
 <form method="POST">
   <label for="volume">Batch Volume ({{ 'liters' if unit_preference == 'metric' else 'gallons' }}):</label><br>
@@ -11,6 +12,10 @@
 
   <label for="target_co2">Target CO₂ Volumes (e.g. 2.5):</label><br>
   <input type="number" name="target_co2" step="0.1" required><br><br>
+
+  <label for="temperature">Highest fermentation/post-fermentation temperature ({{ '°C' if unit_preference == 'metric' else '°F' }}):</label><br>
+  <input type="number" name="temperature" step="0.1" value="{{ 20 if unit_preference == 'metric' else 68 }}" required><br><br>
+  <p>Supported range: 0–30°C / 32–86°F, target at most 3 volumes. This limit is not a guarantee that your bottles are safe.</p>
 
   <button type="submit">Calculate</button>
 </form>
