@@ -43,6 +43,19 @@ in-memory SQLite and temporary import status files. No local Docker is required.
 
 ## GitHub checks
 
+The GitHub workflow-validation job verifies all `.github/workflows/*.yml` files
+using actionlint 1.7.12's checksum-pinned Linux binary. This checks context
+availability, expressions and workflow structure; Python lint/tests alone do
+not cover these. Optional shellcheck/pyflakes integrations are disabled so this
+gate is specifically the workflow validator, alongside the existing Ruff gate.
+
+For the October 11 recovery, actionlint was intentionally run against the exact
+old v1.4.1 publishing workflow: it exited 1 at line 63 with `context "runner" is
+not allowed here`. It then exited 0 against all corrected GitHub workflows.
+That deliberate validator regression check is separate from the original failed
+publication, which was an unintended workflow defect. The CI job repeats the
+all-workflow check and is part of the reusable tag-validation gate.
+
 CI runs Python 3.11/3.13, Ruff, Pytest and the dependency audit; a PostgreSQL 15
 service executes real backup/restore tests in uniquely named temporary databases.
 The container job validates Compose, checks volume identity, builds the candidate
@@ -87,20 +100,22 @@ issues; they are not reclassified as deliberate failure tests.
 
 The final candidate must also pass checks after documentation/release-gate edits.
 Its exact SHA and final run links are recorded in
-[PR #31](https://github.com/anndrox/brew-web/pull/31). No published-image verification
-of v1.4.1 is claimed before publication: the release workflow performs an
+[PR #31](https://github.com/anndrox/brew-web/pull/31). The v1.4.1 publishing workflow
+failed validation before any jobs ran; there is no published v1.4.1 image.
+The v1.4.2 recovery workflow performs an
 anonymous digest-pinned pull and isolated upgrade checks after pushing, and must
 finish successfully before the GitHub release page is published.
 
 ## Release timing
 
-The compatibility/reliability work stays on `codex/compatibility-and-reliability`
-until the owner-authorized publication window: Sunday October 11, 2026 at
-09:00 America/New_York (13:00 UTC, EDT). It is a v1.4.1 candidate, not a published
-release before that window. Do not merge unrelated Dependabot branches into the
-candidate, move an existing version tag, or deploy users' installations.
+The original publication window began Sunday October 11, 2026 at 09:00
+America/New_York (13:00 UTC, EDT). After the v1.4.1 workflow failure, the owner
+approved recovery on `codex/release-workflow-repair` and publication as v1.4.2.
+Do not merge unrelated Dependabot branches, move the existing v1.4.1 tag, or
+deploy users' installations. There is no additional scheduled delay for recovery.
 
-Publication requires the exact candidate SHA's CI and CodeQL checks to pass and
+Publication requires the exact candidate SHA's CI (including workflow validation)
+and CodeQL checks to pass and
 the completed documentation to be synchronized with the branch. After the
 authorized squash merge, main's checks must pass before tagging the merge SHA.
 Tag-triggered CI runs again before image publication. Publish the release page

@@ -21,11 +21,14 @@ trusted interfaces; use an HTTPS reverse proxy when serving beyond localhost.
 - CSRF-protected calendar changes and browser security headers
 - Locally bundled charts, calendar and recipe editor assets for offline use
 
-The v1.4.1 candidate adds safer legacy upgrades and transactional restores,
+The v1.4.2 release line adds safer legacy upgrades and transactional restores,
 corrected brewing estimates and ingredient editing. Read the detailed
 [upgrade compatibility guide](docs/compatibility.md),
 [calculator assumptions](docs/calculators.md) and
 [behavior-to-test coverage](docs/testing.md) before upgrading.
+The v1.4.1 source tag is retained for history, but its publishing workflow failed
+before any image was pushed. Use v1.4.2 once its publishing and anonymous-image
+verification checks pass; do not expect a v1.4.1 container or release page.
 
 ## Maintenance and support
 
@@ -73,8 +76,9 @@ Application responses include content-type, framing, referrer, permissions, and
 content-security protections. When publishing through HTTPS, configure HSTS at
 the reverse proxy and set `SESSION_COOKIE_SECURE=true`.
 
-To pin the verified v1.4.0 release, set `BREWWEB_IMAGE=ghcr.io/anndrox/brew-web:1.4.0`
-in `.env`. The default `latest` tag follows published releases. See
+To pin this numbered release, set `BREWWEB_IMAGE=ghcr.io/anndrox/brew-web:1.4.2`
+in `.env` after confirming its release checks passed. The default `latest` tag
+follows published releases. See
 [release validation and maintainer instructions](docs/releases.md) for the immutable digest.
 
 To build the current source instead of using the published image, set

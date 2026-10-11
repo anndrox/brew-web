@@ -60,14 +60,17 @@ jobs:
     permissions:
       contents: read
     env:
-      DOCKER_CONFIG: ${{ runner.temp }}/brewweb-anonymous-docker
       PUBLISHED_IMAGE: ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.digest }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Verify anonymous access to the immutable published image
+        env:
+          DOCKER_CONFIG: ${{ runner.temp }}/brewweb-anonymous-docker
         run: |
           mkdir -p "$DOCKER_CONFIG"
           docker pull "$PUBLISHED_IMAGE"
       - name: Verify published image startup and data-preserving upgrades
+        env:
+          DOCKER_CONFIG: ${{ runner.temp }}/brewweb-anonymous-docker
         run: sh tests/upgrade/verify_container_upgrade.sh "$PUBLISHED_IMAGE"

@@ -1,7 +1,7 @@
 # Calculator formulas and assumptions
 
 Brew-Web calculators are planning estimates, not laboratory measurements or
-proof that a bottle is pressure-safe. Version 1.4.1 corrects honey, dilution,
+proof that a bottle is pressure-safe. Version 1.4.2 corrects honey, dilution,
 carbonation and hydrometer calculations. Old stored data is not changed. Confirm
 results against your ingredients, instrument calibration and fermentation state.
 

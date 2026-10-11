@@ -5,9 +5,28 @@ version tag matching `v*` is pushed. Ordinary CI builds images but does not publ
 them. No application deployment is performed by the publishing workflow.
 
 Every tag now runs the complete reusable CI workflow before the registry login
-or image push. The tag must exactly match `v` plus the source `VERSION`. Candidate
-v1.4.1 remains on a separate branch until the authorized October 11, 2026
-09:00 Eastern publication window. See [release gates](testing.md#release-timing).
+or image push. The tag must exactly match `v` plus the source `VERSION`. All GitHub
+workflows are checked by checksum-pinned actionlint before publishing. See
+[release gates](testing.md#release-timing).
+
+## Release recovery for v1.4.2
+
+The October 11, 2026 09:00 Eastern v1.4.1 attempt squash-merged PR31 at
+`db6a3b5af1e1aff7c97481c5c039d028bc7b6d83`. Main CI and CodeQL passed, but
+[publishing run 38141660340](https://github.com/anndrox/brew-web/actions/runs/38141660340)
+was rejected before any jobs started: `runner.temp` was used in job-level `env`,
+where GitHub does not support that context. No v1.4.1 image or release page was
+published, and that immutable source tag is preserved.
+
+The owner approved a separate-branch workflow repair and v1.4.2 publication.
+The same anonymous Docker path now uses supported step-level environment
+variables. A new workflow-validation CI job checks every GitHub workflow,
+including the publishing workflow, rather than relying only on Python checks.
+The application's compatibility repairs, sanitization and calculators are
+unchanged from the reviewed v1.4.1 implementation. Consult the matching
+[v1.4.2 release](https://github.com/anndrox/brew-web/releases/tag/v1.4.2) for the
+final source, successful runs and image digest; the release page is created only
+after post-push verification passes.
 
 ## Verified release: v1.4.0
 
@@ -35,7 +54,7 @@ This verifies a fresh installation; it is not an exhaustive upgrade or feature t
    published-image upgrade, volume reuse and browser checks. Keep `VERSION` and
    release notes consistent with the chosen version. Review the detailed
    [compatibility instructions](compatibility.md) for user data preservation.
-2. Push a new semantic version tag, such as `v1.4.1`, at that exact commit.
+2. Push a new semantic version tag, such as `v1.4.2`, at that exact commit.
    This triggers `.github/workflows/publish.yml`; a release page alone does not
    substitute for the tag-push trigger. Never move an already published version tag.
 3. Wait for the publishing workflow to succeed, and record the resulting digest.

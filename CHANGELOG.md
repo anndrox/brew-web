@@ -2,7 +2,19 @@
 
 ## [Unreleased]
 
-## [v1.4.1] - Candidate for 2026-10-11
+## [v1.4.2] - 2026-10-11
+
+### Release recovery
+
+- Move the anonymous verification Docker configuration path to step-level
+  environment variables, where GitHub supports the runner context.
+- Add checksum-pinned actionlint 1.7.12 validation of every GitHub workflow to
+  ordinary and tag-triggered CI, before publishing credentials are available.
+- Publish the compatibility/reliability work below under a new version; retain
+  the immutable v1.4.1 source tag. Its workflow was rejected before any jobs ran,
+  so no v1.4.1 image or release page was published.
+
+## [v1.4.1] - Unpublished source tag, 2026-10-11
 
 ### Fixed
 
@@ -36,8 +48,9 @@
 
 - Added GitHub-only PostgreSQL upgrade/restore, published-image upgrade, explicit
   volume reuse and offline browser checks. No local Docker Desktop is required.
-- This is a candidate until the scheduled publication checks complete. Numbered
-  image tags and the release page are not published early.
+- The 09:00 Eastern publication attempt failed workflow validation before any
+  jobs started. Main CI/CodeQL passed, but that did not validate the release
+  workflow. Version 1.4.2 carries the repair and the same application changes.
 
 ### Previously integrated maintenance
 
