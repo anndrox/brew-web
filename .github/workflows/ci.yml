@@ -113,9 +113,9 @@ jobs:
       - name: Install dependencies and PostgreSQL client
         run: |
           sh tests/security/upgrade_ci_pip.sh
-          python -m pip install --requirement requirements-dev.txt
           apt-get update
-          apt-get install --yes --no-install-recommends postgresql-client
+          apt-get install --yes --no-install-recommends postgresql-client gcc libc6-dev libpq-dev
+          python -m pip install --no-binary=psycopg2-binary --requirement requirements-dev.txt
       - name: Verify legacy upgrades and atomic restores in isolated databases
         env:
           BREWWEB_TEST_POSTGRES: postgresql+psycopg2://brewtest:runner-test-only@postgres:5432/brewtest

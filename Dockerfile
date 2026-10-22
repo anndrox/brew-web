@@ -9,12 +9,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY requirements.txt .
-RUN pip install --requirement requirements.txt
+# Compile only the driver so it shares Debian's maintained libpq/OpenSSL rather
+# than shipping private native libraries from a prebuilt binary wheel.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client gcc libc6-dev libpq-dev \
+    && pip install --no-binary=psycopg2-binary --requirement requirements.txt \
+    && apt-get purge -y --auto-remove gcc libc6-dev libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --gid 1000 brewweb \
     && useradd --uid 1000 --gid brewweb --create-home --shell /usr/sbin/nologin brewweb

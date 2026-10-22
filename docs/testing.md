@@ -132,9 +132,12 @@ It is not a production deployment scheduler.
 
 For v1.4.3, candidate and anonymous post-publish checks also execute
 `tests/security/runtime_versions.py` inside the actual image. It asserts Python
-3.13.17+, driver 2.9.13+, bundled libpq 17.11+, pip 26.2.2+ and both pip/requests
-CA bundles at least 2026.10.19, and logs system/bundled OpenSSL versions separately.
-These version checks do not replace native-library vulnerability assessment.
+3.13.17+, driver 2.9.13+, Debian libpq 15.19+, pip 26.2.2+ and both pip/requests
+CA bundles at least 2026.10.19. It records mapped native-library paths and Debian
+package versions, refuses private wheel libraries and checks that the build
+compiler is absent. The PostgreSQL/browser job compiles the same driver against
+the same base distribution, rather than testing only the prebuilt wheel.
+These checks do not replace distribution-native vulnerability assessment.
 CI first installs the hash-pinned PSF-recommended pip wheel, without weakening TLS.
 Image upgrade checks run independently from immutable v1.4.0 and v1.4.2 sources;
 both retain the unversioned-schema and repeated-startup cases. All such containers

@@ -9,8 +9,10 @@
 - Refresh the pinned Python 3.13 Bookworm image to the verified 3.13.17 security
   release; pin certifi 2026.10.19 and verify pip's bundled CA update. CI uses the
   PSF-recommended hash-pinned pip 26.2.2 wheel before dependency downloads.
-- Update psycopg2-binary 2.9.12 to 2.9.13 for parser fixes and refreshed bundled
-  native libraries, without changing the PostgreSQL 15 server or schema.
+- Update psycopg2-binary 2.9.12 to 2.9.13 for parser fixes. Compile the Linux
+  container driver against Debian's maintained libpq/OpenSSL instead of private
+  wheel libraries; remove the build compiler from the final image. No PostgreSQL
+  server or schema change.
 - Update SHA-pinned docker/build-push-action to 7.4.0, including its fix for
   workflow-command injection when printing build metadata.
 - Review all six open Dependabot version PRs separately from security alerts;

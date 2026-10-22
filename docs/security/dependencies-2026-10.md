@@ -12,7 +12,7 @@ browser assets. No alerts were dismissed to produce that result.
 | --- | --- |
 | PR23, build-push-action 7.4.0 | Apply its documented workflow-command-injection fix; retain the exact upstream SHA pin |
 | PR26, Python image digest | Supersede the stale proposal: both old/proposed images contain Python 3.13.15. Use the verified current Python 3.13.17 Bookworm security image instead, without a Python minor/distro change |
-| PR36, grouped pip updates | Apply driver 2.9.13 for parser/native-library maintenance; leave unrelated Ruff 0.17.1 and Playwright 1.64.0 updates separate |
+| PR36, grouped pip updates | Apply driver 2.9.13, source-built against Debian native libraries in Linux containers; leave unrelated Ruff 0.17.1 and Playwright 1.64.0 updates separate |
 | PR22, setup-buildx 4.4.1 | Defer this routine tooling update; no specific applicable security fix was established in this review |
 | PR35/37, CodeQL 4.39.0 | Defer routine analyzer updates; existing CodeQL continues to run, but this is not a claim newer queries are unnecessary |
 | Quill CVE-2025-15056 | No upstream patched release listed; retain documented format restrictions, server sanitization and targeted tests. Do not downgrade merely to hide the advisory |
@@ -32,7 +32,14 @@ browser assets. No alerts were dismissed to produce that result.
   downloads; certificate validation is never disabled and no root is added.
 - psycopg2-binary 2.9.13 retains the existing driver API. Its upstream
   [changes](https://github.com/psycopg/psycopg2/releases/tag/2.9.13) fix malformed
-  bytea/int64-array parsing; its build configuration refreshes native libraries.
+  bytea/int64-array parsing. The first candidate's actual inventory still showed
+  a private OpenSSL 3.5.8 library in its wheel. Following the
+  [maintainer's production installation guidance](https://www.psycopg.org/docs/install.html),
+  the Linux image instead uses `--no-binary=psycopg2-binary`, compiling against
+  Debian's libpq 15/OpenSSL packages. Build headers/compiler are removed in the
+  same image layer; runtime package dependencies remain. The import/API and
+  requirement name stay unchanged, so ordinary local development can still use
+  its platform's wheel. No PostgreSQL server-major migration is involved.
   These maintenance fixes are not represented as a demonstrated Brew-Web exploit
   or a newly assigned psycopg2 CVE.
 - [build-push-action 7.4.0](https://github.com/docker/build-push-action/releases/tag/v7.4.0)
@@ -42,13 +49,14 @@ browser assets. No alerts were dismissed to produce that result.
 ## Verification and limits
 
 The GitHub-only image inventory prints interpreter, pip, both CA bundles,
-driver/libpq and system/bundled OpenSSL versions and asserts the reviewed minimums.
-Do not assume binary wheels use the operating system's OpenSSL: updating the base
-alone does not replace their private libraries. Native-library version reporting
-is not a complete CVE scan, and the inventory does not promise the wheel contains
-the newest OpenSSL branch/patch. Upstream OpenSSL advisories may concern features
-not used by this application; custom external TLS/database deployments need their
-own assessment. The separate [editor advisory](../../SECURITY.md#bundled-editor-advisory)
+driver/libpq, loaded native-library paths and Debian package versions. It refuses
+private wheel library directories and a compiler remaining in the final image.
+Upgrading a base alone does not replace a wheel's private native libraries;
+source compilation avoids that separate update channel here. Native-library
+version reporting is not a complete CVE scan: Debian backports require vendor
+package-version assessment, not just comparison with upstream version strings.
+Custom external TLS/database deployments need their own assessment. The separate
+[editor advisory](../../SECURITY.md#bundled-editor-advisory)
 remains disclosed rather than called fixed.
 
 Required release evidence: CI, CodeQL, runtime/CA checks, PHP absence checks,
