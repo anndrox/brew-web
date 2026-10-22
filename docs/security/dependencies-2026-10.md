@@ -59,6 +59,30 @@ Custom external TLS/database deployments need their own assessment. The separate
 [editor advisory](../../SECURITY.md#bundled-editor-advisory)
 remains disclosed rather than called fixed.
 
+### Remaining Debian OpenSSL findings
+
+The [Debian tracker](https://security-tracker.debian.org/tracker/source-package/openssl)
+still lists six open issues for Bookworm's security package
+`3.0.22-1~deb12u1`. Source-linking the driver does **not** fix these issues.
+The [upstream advisory](https://openssl-library.org/news/secadv/20260929.txt)
+and the stock deployment were reviewed separately:
+
+| Findings | Stock Brew-Web exposure assessment |
+| --- | --- |
+| CVE-2026-84782 / CVE-2026-75806 | Require DTLS; the app/database use TCP, not DTLS |
+| CVE-2026-77696 / CVE-2026-54872 | Require SM2 or affected generic-curve signing; Brew-Web implements neither |
+| CVE-2026-75805 | Requires a particular CMP revocation operation; no CMP client is used |
+| CVE-2026-35189 | Malicious TLS certificates can cause memory pressure. The app's update lookup targets a fixed GitHub HTTPS URL with certificate verification, not a user-selected server. This limits attacker access but does not patch the library or eliminate malicious-peer risk |
+
+These are applicability assessments from source/configuration review, not exploit
+tests or a clean OS audit. The default Gunicorn listener is HTTP; a custom TLS
+proxy is outside this image. Custom database TLS peers, signing code, outbound
+endpoints or trust stores require reassessment. Keep certificate verification
+enabled and do not add untrusted roots; use trusted database endpoints. Follow
+Debian's package fixes rather than replacing system crypto with an unreviewed
+hand-built library. The residual certificate-memory risk remains disclosed until
+a vendor fix is available for this supported distro.
+
 Required release evidence: CI, CodeQL, runtime/CA checks, PHP absence checks,
 browser journeys, 15 PostgreSQL restore/legacy cases, and data-preserving container
 upgrades from both immutable published v1.4.0 and v1.4.2 images. The tag workflow
