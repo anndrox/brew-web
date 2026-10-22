@@ -130,6 +130,17 @@ It is not a production deployment scheduler.
 
 ## Dependency audit scope
 
+PHP exposure checks are separate from Python dependency auditing. The manual/PR
+`PHP exposure assessment` workflow checks the exact released v1.4.2 web image and
+the pinned PostgreSQL image shared by `db`/`export`. Candidate builds and future
+published images also run `tests/security/verify_no_php.sh`. The detector checks
+commands, installed packages and known runtime filenames inside an ephemeral,
+read-only, network-disabled, unprivileged container with no host data mounts.
+Its deliberate failure test adds only a harmless temporary command marker in a
+separate disposable container. No vulnerable PHP package or exploit is installed.
+Results are recorded in job logs, not uploaded artifacts. See the
+[PHP assessment](security/php-2026-10.md) for the scope and limitations.
+
 pip-audit checks Python production requirements. A separate npm audit of the
 three pinned browser packages reports Quill's known low-severity
 CVE-2025-15056; the application's mitigations and their tests are documented in

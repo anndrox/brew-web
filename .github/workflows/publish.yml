@@ -74,3 +74,7 @@ jobs:
         env:
           DOCKER_CONFIG: ${{ runner.temp }}/brewweb-anonymous-docker
         run: sh tests/upgrade/verify_container_upgrade.sh "$PUBLISHED_IMAGE"
+      - name: Verify the exact published runtime remains PHP-free
+        env:
+          DOCKER_CONFIG: ${{ runner.temp }}/brewweb-anonymous-docker
+        run: sh tests/security/verify_no_php.sh "$PUBLISHED_IMAGE"

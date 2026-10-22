@@ -28,6 +28,15 @@ with pinned versions. Existing inline scripts require CSP `unsafe-inline`, so a
 strict nonce-based CSP remains future work. No penetration-test or zero-risk claim
 is implied by passing automated checks.
 
+## PHP advisory assessment
+
+The October 21, 2026 PHP advisories CVE-2026-109618 and CVE-2026-109619 target
+PHP runtimes. Brew-Web uses Python/Flask/Gunicorn, not PHP. The v1.4.2 image's
+digest-bound SBOM contains 182 packages and no PHP package. See the
+[dated exposure assessment](docs/security/php-2026-10.md) for exact images,
+runner checks, limitations and operator guidance. No PHP upgrade is applicable
+to the stock Brew-Web image; this does not certify a user's host or custom proxy.
+
 ## Bundled editor advisory
 
 Quill 2.0.3 has the upstream HTML-export advisory

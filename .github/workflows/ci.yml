@@ -75,6 +75,10 @@ jobs:
         run: sh tests/upgrade/verify_compose_volume.sh
       - name: Build image
         run: docker build --tag brewweb:ci .
+      - name: Verify the candidate remains PHP-free and the detector fails closed
+        run: |
+          sh tests/security/verify_no_php.sh --self-test brewweb:ci
+          sh tests/security/verify_no_php.sh brewweb:ci
       - name: Verify legacy database upgrade preserves data
         run: sh tests/upgrade/verify_container_upgrade.sh brewweb:ci
 

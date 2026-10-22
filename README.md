@@ -44,6 +44,10 @@ upgrading, and validate the upgrade in a non-production copy when practical. Use
 the issue forms for reproducible bugs, and report suspected vulnerabilities
 privately as described in [SECURITY.md](SECURITY.md).
 
+For the October 2026 PHP alerts, see the [scoped PHP exposure assessment](docs/security/php-2026-10.md).
+The stock Python application has no PHP runtime to patch; custom hosts/proxies
+must be assessed separately.
+
 ## Quick start
 
 Requirements: Git, Docker Engine or Docker Desktop, and Docker Compose v2.

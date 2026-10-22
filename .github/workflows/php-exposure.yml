@@ -1,0 +1,41 @@
+name: PHP exposure assessment
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/php-exposure.yml'
+      - 'tests/security/**'
+      - 'docs/security/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/php-exposure.yml'
+      - 'tests/security/**'
+      - 'docs/security/**'
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    name: Published image PHP absence
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      WEB_IMAGE: ghcr.io/anndrox/brew-web@sha256:6eaa72ba9897450023fe8394a88203d962a49611111e49c64348d208907cbe51
+      DATABASE_IMAGE: postgres:15-alpine@sha256:fe0737ba566a2c5b2a28f34433c0a423261900ec17b9bf7ad115e1aae7e57f1b
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Pull the exact reviewed public images
+        run: |
+          docker pull "$WEB_IMAGE"
+          docker pull "$DATABASE_IMAGE"
+      - name: Prove the detector rejects an intentional PHP command marker
+        run: sh tests/security/verify_no_php.sh --self-test "$WEB_IMAGE"
+      - name: Check published web and shared database/export runtime
+        run: sh tests/security/verify_no_php.sh "$WEB_IMAGE" "$DATABASE_IMAGE"
