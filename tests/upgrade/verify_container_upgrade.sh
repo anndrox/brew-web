@@ -2,7 +2,8 @@
 set -eu
 
 image="${1:-brewweb:ci}"
-published_image='ghcr.io/anndrox/brew-web@sha256:903a350b742d817885a62f6ca17d67afe99ff8a997aa3bc8bddd87095def7f73'
+published_image="${2:-ghcr.io/anndrox/brew-web@sha256:903a350b742d817885a62f6ca17d67afe99ff8a997aa3bc8bddd87095def7f73}"
+printf 'Verifying upgrade from %s to %s\n' "$published_image" "$image"
 run_image="$image"
 network="brewweb-upgrade-$$"
 database_container="brewweb-upgrade-db-$$"
@@ -80,7 +81,7 @@ verify_data() {
     < tests/upgrade/verify_preserved_data.sql
 }
 
-# First prove the currently published v1.4.0 image's database can be opened by
+# First prove the selected published image's database can be opened by
 # the candidate; same database, credentials, mounts, data and PostgreSQL major.
 run_image="$published_image"
 start_web
@@ -106,4 +107,4 @@ docker rm -fv "$web_container" >/dev/null
 start_web
 verify_data
 
-printf '%s\n' 'Published v1.4.0 upgrade, unversioned compatibility and second startup preserved representative data.'
+printf 'Upgrade from %s, unversioned compatibility and second startup preserved representative data.\n' "$published_image"

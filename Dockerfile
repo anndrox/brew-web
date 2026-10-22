@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM python:3.13-slim-bookworm@sha256:ed86c82274b3c69b52fb5820f358f0bd7df0b603332063cb5c6e32bd220c3e6e
+FROM python:3.13-slim-bookworm@sha256:e32be0e55814a08977501ca863271d9bd02443710db8f2afaf8372e2c4508530
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -9,12 +9,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY requirements.txt .
-RUN pip install --requirement requirements.txt
+# Compile only the driver so it shares Debian's maintained libpq/OpenSSL rather
+# than shipping private native libraries from a prebuilt binary wheel.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client gcc libc6-dev libpq-dev \
+    && pip install --no-binary=psycopg2-binary --requirement requirements.txt \
+    && apt-get purge -y --auto-remove gcc libc6-dev libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --gid 1000 brewweb \
     && useradd --uid 1000 --gid brewweb --create-home --shell /usr/sbin/nologin brewweb

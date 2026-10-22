@@ -1,6 +1,6 @@
 # Upgrade compatibility and restore safety
 
-Brew-Web 1.4.2 preserves the existing PostgreSQL 15 database, account password
+Brew-Web 1.4.3 preserves the existing PostgreSQL 15 database, account password
 hashes, IDs, brewing values and relationships. Upgrades add known missing columns;
 they do not recalculate historical measurements, infer a missing batch size, or
 change ingredient units. Make and verify a backup before upgrading. Unknown or

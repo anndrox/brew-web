@@ -9,6 +9,17 @@ or image push. The tag must exactly match `v` plus the source `VERSION`. All Git
 workflows are checked by checksum-pinned actionlint before publishing. See
 [release gates](testing.md#release-timing).
 
+## Security maintenance for v1.4.3
+
+The [dependency review](security/dependencies-2026-10.md) records why a runtime
+refresh is warranted even though GitHub reported no open security alerts. The
+release updates only reviewed runtime/build dependencies and regression evidence;
+it does not change PostgreSQL major, schemas, volume identity or application data.
+The normal release gates include actual runtime/CA inventories and upgrades from
+both published v1.4.0 and v1.4.2 images. The matching
+[v1.4.3 release](https://github.com/anndrox/brew-web/releases/tag/v1.4.3) records the
+verified source, run links and digest only after publishing checks pass.
+
 ## Release recovery for v1.4.2
 
 The October 11, 2026 09:00 Eastern v1.4.1 attempt squash-merged PR31 at
