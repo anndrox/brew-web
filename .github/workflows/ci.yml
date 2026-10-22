@@ -51,7 +51,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - name: Install dependencies
-        run: python -m pip install --requirement requirements-dev.txt
+        run: |
+          sh tests/security/upgrade_ci_pip.sh
+          python -m pip install --requirement requirements-dev.txt
       - name: Lint
         run: ruff check .
       - name: Test
@@ -79,14 +81,22 @@ jobs:
         run: |
           sh tests/security/verify_no_php.sh --self-test brewweb:ci
           sh tests/security/verify_no_php.sh brewweb:ci
+      - name: Verify runtime security versions and certificate trust packages
+        run: |
+          docker run --rm --interactive --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges:true --entrypoint python brewweb:ci \
+            -B - < tests/security/runtime_versions.py
       - name: Verify legacy database upgrade preserves data
-        run: sh tests/upgrade/verify_container_upgrade.sh brewweb:ci
+        run: |
+          sh tests/upgrade/verify_container_upgrade.sh brewweb:ci
+          sh tests/upgrade/verify_container_upgrade.sh brewweb:ci \
+            ghcr.io/anndrox/brew-web@sha256:6eaa72ba9897450023fe8394a88203d962a49611111e49c64348d208907cbe51
 
   postgres:
     name: PostgreSQL restore and compatibility
     runs-on: ubuntu-latest
     container:
-      image: python:3.13-slim-bookworm@sha256:ed86c82274b3c69b52fb5820f358f0bd7df0b603332063cb5c6e32bd220c3e6e
+      image: python:3.13-slim-bookworm@sha256:e32be0e55814a08977501ca863271d9bd02443710db8f2afaf8372e2c4508530
     services:
       postgres:
         image: postgres:15-alpine@sha256:fe0737ba566a2c5b2a28f34433c0a423261900ec17b9bf7ad115e1aae7e57f1b
@@ -102,6 +112,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install dependencies and PostgreSQL client
         run: |
+          sh tests/security/upgrade_ci_pip.sh
           python -m pip install --requirement requirements-dev.txt
           apt-get update
           apt-get install --yes --no-install-recommends postgresql-client

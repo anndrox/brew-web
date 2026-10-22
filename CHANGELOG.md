@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+## [v1.4.3] - 2026-10-22
+
+### Security maintenance
+
+- Refresh the pinned Python 3.13 Bookworm image to the verified 3.13.17 security
+  release; pin certifi 2026.10.19 and verify pip's bundled CA update. CI uses the
+  PSF-recommended hash-pinned pip 26.2.2 wheel before dependency downloads.
+- Update psycopg2-binary 2.9.12 to 2.9.13 for parser fixes and refreshed bundled
+  native libraries, without changing the PostgreSQL 15 server or schema.
+- Update SHA-pinned docker/build-push-action to 7.4.0, including its fix for
+  workflow-command injection when printing build metadata.
+- Review all six open Dependabot version PRs separately from security alerts;
+  do not describe routine lint/browser/CodeQL updates as vulnerability fixes.
+- Verify actual runtime/CA/native-library versions on GitHub and upgrade from
+  both published v1.4.0 and v1.4.2 images, retaining data and repeated-startup checks.
+
 ### Security assessment
 
 - Assess PHP CVE-2026-109618/CVE-2026-109619 against the stock v1.4.2 image and

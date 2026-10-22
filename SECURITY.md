@@ -28,6 +28,14 @@ with pinned versions. Existing inline scripts require CSP `unsafe-inline`, so a
 strict nonce-based CSP remains future work. No penetration-test or zero-risk claim
 is implied by passing automated checks.
 
+## Dependency security review
+
+The [October 2026 dependency review](docs/security/dependencies-2026-10.md)
+distinguishes GitHub's reported alerts from routine update PRs, native libraries,
+Python/runtime CA fixes and vendored browser findings. Version 1.4.3 updates the
+reviewed runtime/build components; successful pip-audit is not an OS/native-library
+or all-language security certification. The existing Quill caveat below remains.
+
 ## PHP advisory assessment
 
 The October 21, 2026 PHP advisories CVE-2026-109618 and CVE-2026-109619 target

@@ -45,7 +45,7 @@ jobs:
             type=raw,value=latest
       - name: Build and publish
         id: build
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           push: true
@@ -73,7 +73,17 @@ jobs:
       - name: Verify published image startup and data-preserving upgrades
         env:
           DOCKER_CONFIG: ${{ runner.temp }}/brewweb-anonymous-docker
-        run: sh tests/upgrade/verify_container_upgrade.sh "$PUBLISHED_IMAGE"
+        run: |
+          sh tests/upgrade/verify_container_upgrade.sh "$PUBLISHED_IMAGE"
+          sh tests/upgrade/verify_container_upgrade.sh "$PUBLISHED_IMAGE" \
+            ghcr.io/anndrox/brew-web@sha256:6eaa72ba9897450023fe8394a88203d962a49611111e49c64348d208907cbe51
+      - name: Verify the published runtime security versions
+        env:
+          DOCKER_CONFIG: ${{ runner.temp }}/brewweb-anonymous-docker
+        run: |
+          docker run --rm --interactive --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges:true --entrypoint python "$PUBLISHED_IMAGE" \
+            -B - < tests/security/runtime_versions.py
       - name: Verify the exact published runtime remains PHP-free
         env:
           DOCKER_CONFIG: ${{ runner.temp }}/brewweb-anonymous-docker

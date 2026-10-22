@@ -130,6 +130,16 @@ It is not a production deployment scheduler.
 
 ## Dependency audit scope
 
+For v1.4.3, candidate and anonymous post-publish checks also execute
+`tests/security/runtime_versions.py` inside the actual image. It asserts Python
+3.13.17+, driver 2.9.13+, bundled libpq 17.11+, pip 26.2.2+ and both pip/requests
+CA bundles at least 2026.10.19, and logs system/bundled OpenSSL versions separately.
+These version checks do not replace native-library vulnerability assessment.
+CI first installs the hash-pinned PSF-recommended pip wheel, without weakening TLS.
+Image upgrade checks run independently from immutable v1.4.0 and v1.4.2 sources;
+both retain the unversioned-schema and repeated-startup cases. All such containers
+and databases remain disposable GitHub-hosted runner resources.
+
 PHP exposure checks are separate from Python dependency auditing. The manual/PR
 `PHP exposure assessment` workflow checks the exact released v1.4.2 web image and
 the pinned PostgreSQL image shared by `db`/`export`. Candidate builds and future
