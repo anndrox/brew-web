@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Security assessment
+
+- Assess PHP CVE-2026-109618/CVE-2026-109619 against the stock v1.4.2 image and
+  shared PostgreSQL/export image, with GitHub-only runtime inventory and a
+  controlled detector test. No PHP patch, image replacement or data migration is
+  implied: the stock application does not use PHP.
+- Add PHP absence checks to candidate CI and future post-publish verification;
+  publish the scoped findings and host/custom-image limitations.
+
 ## [v1.4.2] - 2026-10-11
 
 ### Release recovery
