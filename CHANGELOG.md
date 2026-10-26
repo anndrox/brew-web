@@ -8,6 +8,8 @@
   update) and Ruff to 0.17.2. Playwright is not installed in the application image.
 - Update both CodeQL steps to the same SHA-pinned 4.39.1 release, group future
   CodeQL Dependabot updates, and test rejection of split versions/mutable pins.
+- Add data-preserving upgrades from the current published v1.4.3 digest to
+  candidate and future post-push checks, retaining older upgrade coverage.
 - Hold merge and publication pending an official Python 3.13.18 Bookworm image
   for interpreter-level CVE-2026-115557 protection. certifi changes alone do not
   provide that protection. VERSION, released tags and images remain unchanged.

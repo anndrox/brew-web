@@ -147,6 +147,12 @@ and the assertion must be raised and every exact-SHA gate rerun, as documented
 in the [dependency review](security/dependencies-2026-10.md). No tag is created
 while the hold is active.
 
+Candidate and future post-push upgrade tests additionally start from the current
+published v1.4.3 image at immutable digest
+`sha256:4c05e706d919351c8bed4744675c87efde93195aa83fa04c9bd5dec5c8cbc555`.
+The existing v1.4.0/v1.4.2, unversioned and repeated-startup cases remain. This
+tests the closest published upgrade source as well as older supported profiles.
+
 ### Published v1.4.3 baseline
 
 For v1.4.3, candidate and anonymous post-publish checks also execute
