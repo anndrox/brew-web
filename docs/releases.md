@@ -9,6 +9,16 @@ or image push. The tag must exactly match `v` plus the source `VERSION`. All Git
 workflows are checked by checksum-pinned actionlint before publishing. See
 [release gates](testing.md#release-timing).
 
+## October 26 publication hold
+
+The owner chose to wait for the official Python 3.13.18 Bookworm image providing
+CVE-2026-115557 protection. The dependency/CodeQL candidate is not merged or
+published; VERSION and existing tags/digests are unchanged. Functional CI against
+the available 3.13.17 base does not clear this hold. See the
+[dated review and explicit resumption checklist](security/dependencies-2026-10.md#release-blocker-interpreter-ca-key-protection).
+No custom interpreter build, new scheduled publication or infrastructure change
+is authorized by this hold.
+
 ## Security maintenance for v1.4.3
 
 The [dependency review](security/dependencies-2026-10.md) records why a runtime

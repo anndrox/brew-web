@@ -130,6 +130,25 @@ It is not a production deployment scheduler.
 
 ## Dependency audit scope
 
+### October 26 candidate checks and release hold
+
+`tests/test_ci_policy.py` asserts both committed CodeQL steps use the same full
+SHA. Its deliberate negative cases reject either split step and mutable/short
+pins; these are policy regression tests, not vulnerability exploitation. Future
+Dependabot CodeQL proposals are grouped to update both steps together.
+
+Candidate inventory now requires requests certifi 2026.10.23 and verifies that
+the C1/C3 emSign root fingerprints are absent from its loaded CA bundle. pip's
+vendored bundle is reported separately and remains 2026.10.19. The current
+compatibility base and Python assertion are still 3.13.17. Passing these checks
+does **not** prove CVE-2026-115557's interpreter-level key blocking. Publication
+and merge are held for the official 3.13.18 Bookworm image, then both base pins
+and the assertion must be raised and every exact-SHA gate rerun, as documented
+in the [dependency review](security/dependencies-2026-10.md). No tag is created
+while the hold is active.
+
+### Published v1.4.3 baseline
+
 For v1.4.3, candidate and anonymous post-publish checks also execute
 `tests/security/runtime_versions.py` inside the actual image. It asserts Python
 3.13.17+, driver 2.9.13+, Debian libpq 15.19+, pip 26.2.2+ and both pip/requests

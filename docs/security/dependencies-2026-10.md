@@ -1,5 +1,56 @@
 # Dependency security review
 
+## October 26 follow-up: candidate only, publication held
+
+The owner approved the certificate-trust and paired CodeQL fixes, then explicitly
+chose to hold publication for the official patched image rather than introduce a
+custom Python build. The candidate remains on a separate, unmerged branch.
+Passing compatibility CI is not a declaration of complete TLS remediation.
+
+- PR42: certifi 2026.10.23 removes the emSign Root CA C1 and ECC Root CA C3
+  certificates, as shown in the [upstream diff](https://github.com/certifi/python-certifi/commit/b60466c9f2882d9cf088943c650b0faac06c080c).
+  Candidate image checks load requests' actual certifi bundle and assert those
+  SHA-256 fingerprints are absent, not merely that a version number increased.
+- PR42 also updates runner-only Playwright to 1.64.1 and Ruff to 0.17.2.
+  [Playwright's release](https://github.com/microsoft/playwright-python/releases/tag/v1.64.1)
+  updates its embedded Node to 24.22.1 for CA distrust. This protects test tooling;
+  Playwright is not shipped in the application image. Ruff is routine maintenance.
+- PR43/45 each changed only one CodeQL step and failed with a configuration-version
+  mismatch, not an application finding. Update both to
+  `9b3254085494b55a0f7c4c2b3d2d52cc712ce370` (4.39.1) together. A scoped Dependabot
+  group and regression tests prevent future split updates or mutable/short pins.
+- PR22/41/44 remain separate routine tooling proposals. No unrelated bot branch
+  is merged, no security alert dismissed, and no permissions are added.
+
+### Release blocker: interpreter CA-key protection
+
+[Python 3.13.18](https://www.python.org/downloads/release/python-31318/) blocks the
+compromised intermediate CA keys in `ssl` for CVE-2026-115557. The PSF explicitly
+states this protects ordinary pip use even if pip has not been updated. Updating
+certifi alone does not provide that interpreter-level protection, including for
+other/system trust stores. PyPI still lists pip 26.2.2; its embedded certifi stays
+2026.10.19 in this candidate. Do not rewrite that vendored copy or disable TLS.
+
+On October 26, Docker Hub's official `3.13-slim-bookworm` tag still resolved to
+`sha256:e32be0e55814a08977501ca863271d9bd02443710db8f2afaf8372e2c4508530`
+(Python 3.13.17). Official tags `3.13.18-slim-bookworm`, `3.13.18-bookworm` and
+`3.13.18-slim-trixie` returned HTTP 404, and the official-images manifest still
+listed 3.13.17. This is an upstream image-availability blocker, not a reason to
+change distro/minor versions or build an unapproved replacement interpreter.
+
+Before resuming merge/publication: verify the official 3.13.18+ Bookworm image's
+registry config and immutable digest; update both Dockerfile and PostgreSQL job
+pins; raise the actual-image Python assertion from 3.13.17 to 3.13.18; assign the
+next unused patch release version; rerun exact-SHA CI/CodeQL and browser/advisory
+review. Retest merged main before a new immutable tag, then require complete
+publication and anonymous digest-pinned image verification before a release page.
+Never reuse/move an existing release tag. No new release or image is claimed here.
+
+The existing Quill and Debian OpenSSL caveats below remain unresolved; this
+follow-up does not certify every trust store, TLS peer or OS package.
+
+## October 22 release review (v1.4.3)
+
 Reviewed October 22, 2026. GitHub's Dependabot API reported **zero open security
 alerts** and six open version-update PRs. These are different signals: a version
 PR is not automatically a vulnerability alert, and zero alerts does not cover
