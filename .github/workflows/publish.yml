@@ -77,6 +77,8 @@ jobs:
           sh tests/upgrade/verify_container_upgrade.sh "$PUBLISHED_IMAGE"
           sh tests/upgrade/verify_container_upgrade.sh "$PUBLISHED_IMAGE" \
             ghcr.io/anndrox/brew-web@sha256:6eaa72ba9897450023fe8394a88203d962a49611111e49c64348d208907cbe51
+          sh tests/upgrade/verify_container_upgrade.sh "$PUBLISHED_IMAGE" \
+            ghcr.io/anndrox/brew-web@sha256:4c05e706d919351c8bed4744675c87efde93195aa83fa04c9bd5dec5c8cbc555
       - name: Verify the published runtime security versions
         env:
           DOCKER_CONFIG: ${{ runner.temp }}/brewweb-anonymous-docker

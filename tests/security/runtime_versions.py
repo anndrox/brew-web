@@ -4,6 +4,7 @@ No connections, database mutations or host files are involved. Native-library
 versions are reported separately because pip-audit does not audit their CVEs.
 """
 
+import hashlib
 import importlib.metadata
 import json
 import shutil
@@ -12,6 +13,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import certifi
 import psycopg2
 from packaging.version import Version
 
@@ -27,6 +29,20 @@ report = {
 from pip._vendor import certifi as pip_certifi  # noqa: E402
 
 report["pip_vendored_certifi"] = pip_certifi.__version__
+requests_trust = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+requests_trust.load_verify_locations(cafile=certifi.where())
+requests_root_fingerprints = {
+    hashlib.sha256(certificate).hexdigest()
+    for certificate in requests_trust.get_ca_certs(binary_form=True)
+}
+distrusted_roots = {
+    "emSign Root CA - C1": "125609aa301da0a249b97a8239cb6a34216f44dcac9f3954b14292f2e8c8608f",
+    "emSign ECC Root CA - C3": "bc4d809b15189d78db3e1d8cf4f9726a795da1643ca5f1358e1ddb0edc0d7eb3",
+}
+report["requests_distrusted_roots_present"] = [
+    name for name, fingerprint in distrusted_roots.items()
+    if fingerprint in requests_root_fingerprints
+]
 native_directory = Path(psycopg2.__file__).resolve().parent.parent / "psycopg2_binary.libs"
 mapped_libraries = sorted(
     {
@@ -53,5 +69,11 @@ assert all(".libs/" not in path for path in mapped_libraries), "Private crypto l
 assert report["compiler"] is None, "Build compiler was left in the runtime image"
 assert Version(report["pip"]) >= Version("26.2.2"), "pip certificate-trust update is missing"
 assert Version(report["pip_vendored_certifi"]) >= Version("2026.10.19"), "Old pip CA bundle"
-assert Version(report["requests_certifi"]) >= Version("2026.10.19"), "Old requests CA bundle"
-print("PASS: reviewed runtime and certificate-trust versions are installed.")
+assert Version(report["requests_certifi"]) >= Version("2026.10.23"), "Old requests CA bundle"
+assert not report["requests_distrusted_roots_present"], "Distrusted emSign roots remain trusted"
+# Compatibility CI still uses the last published official Bookworm base (3.13.17).
+# Publication is held separately: resume only with official Python >=3.13.18,
+# its pinned digest and an updated Python floor above. Bundle checks do not prove
+# the interpreter-level CVE-2026-115557 protection or a clean system trust store.
+print("PASS: compatibility inventory and requests CA-root checks.")
+print("Release readiness is separate: official Python >=3.13.18 is required before publishing.")

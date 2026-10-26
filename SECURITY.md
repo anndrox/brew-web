@@ -36,6 +36,14 @@ Python/runtime CA fixes and vendored browser findings. Version 1.4.3 updates the
 reviewed runtime/build components; successful pip-audit is not an OS/native-library
 or all-language security certification. The existing Quill caveat below remains.
 
+The October 26 follow-up is an **unreleased candidate**. Python 3.13.18 adds
+interpreter-level rejection of compromised eMudhra keys (CVE-2026-115557).
+Publication is held pending the official patched Bookworm image; the certifi
+update alone is not that fix. v1.4.3 remains the last published image and must not
+be represented as including this newer interpreter protection. See the dated
+review for the blocker and required resumption checks. Do not disable TLS or add
+untrusted roots as a workaround.
+
 ## PHP advisory assessment
 
 The October 21, 2026 PHP advisories CVE-2026-109618 and CVE-2026-109619 target
