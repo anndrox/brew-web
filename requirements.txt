@@ -7,5 +7,5 @@ Flask-WTF==1.3.0
 gunicorn==26.2.0
 psycopg2-binary==2.9.13
 requests==2.34.2
-certifi==2026.10.19
+certifi==2026.10.23
 nh3==0.3.7
